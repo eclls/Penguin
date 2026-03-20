@@ -1,10 +1,25 @@
 # Penguin 🐧
 
-Application **Penguin** – expédition polaire sur banquise. Interface Streamlit inspirée du thème arctique.
+Application Streamlit interactive de suivi de progression.
 
-## Installation
+## Fonctionnalites principales
+
+- Compteur **Jour X** avec conversion stricte :
+  - `1 jour = 1 mouette`
+  - `30 mouettes = 1 pingouin`
+  - `6 pingouins = 1 orque`
+  - `2 orques = 1 requin`
+- Visualisation de la banquise (emoji dynamiques selon la progression).
+- Modale d'ouverture : **"Tu as tue le pinguin ? Secoue toi"** avec reset possible.
+- Authentification : creation de compte + connexion.
+- Social : ajout d'amis et visualisation de leur progression.
+- Ajustement manuel : definition du nombre de jours de depart.
+
+## Installation locale
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -14,32 +29,25 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-L'app s'ouvre dans le navigateur (par défaut http://localhost:8501).
+## Persistance des donnees
+
+Par defaut, l'application utilise SQLite dans `data/penguin.db`.
+
+Pour un environnement remote, tu peux definir un chemin custom :
+
+```bash
+export PENGUIN_DB_PATH=/tmp/penguin.db
+```
+
+Ou via `st.secrets` (Streamlit Cloud) :
+
+```toml
+penguin_db_path = "/mount/persistent/penguin.db"
+```
 
 ## Pages
 
-| Page | Description |
-|------|-------------|
-| **Banquise** (accueil) | Jour 1, stats faune, iceberg, popup "Tu as tué le pinguin ?" |
-| **Vue Illustrée** | Jour 256, écosystème (manchots, goélands, orque), détails faune |
-| **Profil** | Avatar, stats (jours survécus, poissons), paramètres |
-| **Amis** | Communauté, colonie, suggestions glacées |
-
-## Structure
-
-```
-Penguin/
-├── app.py              # Page d'accueil
-├── utils.py            # CSS et utilitaires partagés
-├── pages/
-│   ├── 1_Vue_Illustree.py
-│   ├── 2_Profil.py
-│   └── 3_Amis.py
-├── requirements.txt
-└── .streamlit/
-    └── config.toml
-```
-
-## Déploiement
-
-Compatible Streamlit Cloud, Hugging Face Spaces, ou tout hébergeur supportant Streamlit.
+- `app.py` : connexion/inscription + banquise principale.
+- `pages/1_Vue_Illustree.py` : decomposition visuelle de la progression.
+- `pages/2_Profil.py` : stats utilisateur + ajustement manuel.
+- `pages/3_Amis.py` : gestion des amis et progression sociale.
