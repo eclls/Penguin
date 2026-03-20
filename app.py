@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import math
 import os
 import sqlite3
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +49,13 @@ def inject_css() -> None:
         border: 1px solid rgba(0, 52, 101, 0.1);
         padding: 1rem;
         box-shadow: 0 8px 30px rgba(0, 52, 101, 0.08);
+      }
+      .penguin-error-card {
+        background: rgba(255, 237, 237, 0.96);
+        border: 1px solid rgba(186, 26, 26, 0.25);
+        border-radius: 0.9rem;
+        padding: 0.8rem;
+        margin-bottom: 0.8rem;
       }
       .penguin-scene {
         position: relative;
@@ -123,25 +131,42 @@ def inject_ios_webapp_meta() -> None:
           ensureMeta("apple-mobile-web-app-status-bar-style", "black-translucent");
           ensureMeta("apple-mobile-web-app-title", "Penguin");
           ensureMeta("theme-color", "#003465");
-          let icon = head.querySelector('link[rel="apple-touch-icon"]');
-          if (!icon) {
-            icon = doc.createElement("link");
-            icon.setAttribute("rel", "apple-touch-icon");
-            head.appendChild(icon);
+          function ensureLink(rel) {
+            let el = head.querySelector(`link[rel="${rel}"]`);
+            if (!el) {
+              el = doc.createElement("link");
+              el.setAttribute("rel", rel);
+              head.appendChild(el);
+            }
+            return el;
           }
-          icon.setAttribute(
-            "href",
-            "data:image/svg+xml;utf8," +
-            encodeURIComponent(
-              `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'>
-                 <defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
-                   <stop stop-color='#bde8ff'/><stop offset='1' stop-color='#003465'/>
-                 </linearGradient></defs>
-                 <rect width='180' height='180' rx='36' fill='url(#g)'/>
-                 <text x='90' y='112' text-anchor='middle' font-size='90'>🐧</text>
-               </svg>`
-            )
-          );
+
+          // Genere une icone PNG (mieux prise en charge par iOS qu'un SVG).
+          const canvas = doc.createElement("canvas");
+          canvas.width = 180;
+          canvas.height = 180;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const grad = ctx.createLinearGradient(0, 0, 0, 180);
+            grad.addColorStop(0, "#bde8ff");
+            grad.addColorStop(1, "#003465");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 180, 180);
+            ctx.fillStyle = "rgba(255,255,255,0.28)";
+            ctx.beginPath();
+            ctx.arc(42, 40, 28, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = "102px Apple Color Emoji";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🐧", 92, 102);
+            const png = canvas.toDataURL("image/png");
+            const appleIcon = ensureLink("apple-touch-icon");
+            appleIcon.setAttribute("sizes", "180x180");
+            appleIcon.setAttribute("href", png);
+            ensureLink("icon").setAttribute("href", png);
+            ensureLink("shortcut icon").setAttribute("href", png);
+          }
         })();
         </script>
         """,
@@ -361,6 +386,9 @@ def get_cookie_manager() -> Any:
     try:
         return stx.CookieManager()
     except Exception:
+        set_persistent_error(
+            "Le module de memorisation locale a eu un souci. L'app utilise un mode de secours pour cette session."
+        )
         return SessionCookieFallback()
 
 
@@ -487,11 +515,35 @@ def init_session() -> None:
     st.session_state.setdefault("user_id", None)
     st.session_state.setdefault("show_reset_modal", False)
     st.session_state.setdefault("tab", "Banquise")
+    st.session_state.setdefault("persistent_error", None)
 
 
 def logout() -> None:
     st.session_state["user_id"] = None
     st.session_state["show_reset_modal"] = False
+
+
+def set_persistent_error(message: str, details: str | None = None) -> None:
+    st.session_state["persistent_error"] = {
+        "message": message,
+        "details": details or "",
+    }
+
+
+def render_persistent_error() -> None:
+    error_data = st.session_state.get("persistent_error")
+    if not error_data:
+        return
+    st.markdown('<div class="penguin-error-card">', unsafe_allow_html=True)
+    st.error(error_data.get("message", "Une erreur est survenue."))
+    details = error_data.get("details", "").strip()
+    if details:
+        with st.expander("Details techniques"):
+            st.code(details, language="text")
+    if st.button("Fermer le message d'erreur", use_container_width=True):
+        st.session_state["persistent_error"] = None
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def auth_screen(cookie_manager: Any) -> None:
@@ -717,46 +769,58 @@ def run_app() -> None:
     inject_ios_webapp_meta()
     init_database()
     init_session()
-    cookie_manager = get_cookie_manager()
+    render_persistent_error()
 
-    if st.session_state["user_id"] is None:
-        remembered = cookie_manager.get(COOKIE_NAME)
-        if remembered:
-            remembered_user = get_user_by_username(remembered)
-            if remembered_user is not None:
-                st.session_state["user_id"] = int(remembered_user["id"])
+    try:
+        cookie_manager = get_cookie_manager()
 
-    if st.session_state["user_id"] is None:
-        auth_screen(cookie_manager)
+        if st.session_state["user_id"] is None:
+            remembered = cookie_manager.get(COOKIE_NAME)
+            if remembered:
+                remembered_user = get_user_by_username(remembered)
+                if remembered_user is not None:
+                    st.session_state["user_id"] = int(remembered_user["id"])
+
+        if st.session_state["user_id"] is None:
+            auth_screen(cookie_manager)
+            render_ios_bookmark_help()
+            st.stop()
+
+        current_user = get_user_by_id(int(st.session_state["user_id"]))
+        if current_user is None:
+            logout()
+            st.error("Session invalide. Reconnecte-toi.")
+            st.stop()
+
+        if st.session_state.get("show_reset_modal", False):
+            opening_modal(int(current_user["id"]))
+
+        tab = st.radio(
+            "Navigation",
+            options=["Banquise", "Vue illustree", "Amis", "Profil"],
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+
+        if tab == "Banquise":
+            render_banquise(current_user)
+        elif tab == "Vue illustree":
+            render_vue(current_user)
+        elif tab == "Amis":
+            render_amis(current_user)
+        else:
+            render_profil(current_user, cookie_manager)
+
         render_ios_bookmark_help()
-        st.stop()
-
-    current_user = get_user_by_id(int(st.session_state["user_id"]))
-    if current_user is None:
-        logout()
-        st.error("Session invalide. Reconnecte-toi.")
-        st.stop()
-
-    if st.session_state.get("show_reset_modal", False):
-        opening_modal(int(current_user["id"]))
-
-    tab = st.radio(
-        "Navigation",
-        options=["Banquise", "Vue illustree", "Amis", "Profil"],
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-
-    if tab == "Banquise":
-        render_banquise(current_user)
-    elif tab == "Vue illustree":
-        render_vue(current_user)
-    elif tab == "Amis":
-        render_amis(current_user)
-    else:
-        render_profil(current_user, cookie_manager)
-
-    render_ios_bookmark_help()
+    except Exception:
+        details = traceback.format_exc()
+        set_persistent_error(
+            "Une erreur est survenue. Le message est conserve ici tant que tu ne le fermes pas.",
+            details=details,
+        )
+        st.error("Erreur capturee et conservee. Ouvre les details ci-dessous.")
+        with st.expander("Details techniques"):
+            st.code(details, language="text")
 
 
 if __name__ == "__main__":
