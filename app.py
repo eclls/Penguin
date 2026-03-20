@@ -392,6 +392,44 @@ def get_cookie_manager() -> Any:
         return SessionCookieFallback()
 
 
+def safe_cookie_get(cookie_manager: Any, name: str) -> str | None:
+    try:
+        value = cookie_manager.get(name)
+        return value if value else None
+    except Exception:
+        return None
+
+
+def safe_cookie_set(
+    cookie_manager: Any,
+    name: str,
+    value: str,
+    expires_at: datetime | None = None,
+) -> None:
+    try:
+        cookie_manager.set(name, value, expires_at=expires_at)
+    except Exception as exc:
+        set_persistent_error(
+            "Impossible d'enregistrer le pseudo localement sur cet appareil.",
+            details=str(exc),
+        )
+
+
+def safe_cookie_delete(cookie_manager: Any, name: str) -> None:
+    try:
+        # Certains gestionnaires levent KeyError si le cookie n'existe pas.
+        if safe_cookie_get(cookie_manager, name) is None:
+            return
+        cookie_manager.delete(name)
+    except KeyError:
+        return
+    except Exception as exc:
+        set_persistent_error(
+            "Impossible de supprimer le pseudo memorise.",
+            details=str(exc),
+        )
+
+
 def render_ios_bookmark_help() -> None:
     """Affiche une aide simple pour ajouter l'app en bookmark iOS."""
     with st.expander("📱 Installer sur iPhone (bookmark ecran d'accueil)"):
@@ -551,7 +589,7 @@ def auth_screen(cookie_manager: Any) -> None:
     st.caption(
         "Version locale de confiance: choisis ton pseudo, et l'app garde ton compte + tes jours en memoire."
     )
-    remembered = cookie_manager.get(COOKIE_NAME)
+    remembered = safe_cookie_get(cookie_manager, COOKIE_NAME)
     if remembered:
         st.info(f"Pseudo memorise sur cet appareil: **{remembered}**")
 
@@ -589,13 +627,14 @@ def auth_screen(cookie_manager: Any) -> None:
         return
 
     if remember_me:
-        cookie_manager.set(
+        safe_cookie_set(
+            cookie_manager,
             COOKIE_NAME,
             str(user["username"]),
             expires_at=datetime.now() + timedelta(days=365),
         )
     else:
-        cookie_manager.delete(COOKIE_NAME)
+        safe_cookie_delete(cookie_manager, COOKIE_NAME)
 
     st.session_state["user_id"] = int(user["id"])
     st.session_state["show_reset_modal"] = False
@@ -759,7 +798,7 @@ def render_profil(user: dict[str, Any], cookie_manager: Any) -> None:
             st.rerun()
     with c2:
         if st.button("🧹 Oublier ce pseudo", use_container_width=True):
-            cookie_manager.delete(COOKIE_NAME)
+            safe_cookie_delete(cookie_manager, COOKIE_NAME)
             logout()
             st.rerun()
 
@@ -775,7 +814,7 @@ def run_app() -> None:
         cookie_manager = get_cookie_manager()
 
         if st.session_state["user_id"] is None:
-            remembered = cookie_manager.get(COOKIE_NAME)
+            remembered = safe_cookie_get(cookie_manager, COOKIE_NAME)
             if remembered:
                 remembered_user = get_user_by_username(remembered)
                 if remembered_user is not None:
