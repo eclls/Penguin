@@ -245,9 +245,26 @@ def emoji_cloud(emoji: str, count: int, max_display: int = 20) -> str:
 COOKIE_NAME = "penguin_username"
 
 
-@st.cache_resource
-def get_cookie_manager() -> stx.CookieManager:
-    return stx.CookieManager()
+class SessionCookieFallback:
+    """Fallback si le composant cookies n'est pas disponible."""
+
+    def get(self, name: str) -> str | None:
+        return st.session_state.get(f"_fallback_cookie_{name}")
+
+    def set(self, name: str, value: str, expires_at: datetime | None = None) -> None:
+        _ = expires_at  # Signature compatible avec CookieManager.
+        st.session_state[f"_fallback_cookie_{name}"] = value
+
+    def delete(self, name: str) -> None:
+        st.session_state.pop(f"_fallback_cookie_{name}", None)
+
+
+def get_cookie_manager() -> Any:
+    # Ne pas cacher cette fonction: les composants Streamlit sont interdits en cache.
+    try:
+        return stx.CookieManager()
+    except Exception:
+        return SessionCookieFallback()
 
 
 def init_session() -> None:
