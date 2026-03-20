@@ -16,6 +16,8 @@ Application Streamlit **mobile-first** en **mono-fichier** (`app.py`) pour simpl
 - Social : ajout d'amis + progression.
 - Profil : ajustement manuel du compteur.
 - Navigation interne (Banquise / Vue illustree / Amis / Profil) depuis `app.py`.
+- Support bookmark iOS (meta web-app + aide "Sur l'ecran d'accueil").
+- Vue illustree avec vraie scene banquise (ciel, glace, eau et animaux dynamiques).
 
 ## Lancement local
 

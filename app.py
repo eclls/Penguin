@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+import math
 import os
 import sqlite3
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import Any
 
 import extra_streamlit_components as stx
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Penguin",
@@ -47,9 +49,104 @@ def inject_css() -> None:
         padding: 1rem;
         box-shadow: 0 8px 30px rgba(0, 52, 101, 0.08);
       }
+      .penguin-scene {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4 / 5;
+        border-radius: 1rem;
+        overflow: hidden;
+        background: linear-gradient(180deg, #9eddff 0%, #dff5ff 45%, #79b6dc 45%, #4b8bb7 100%);
+        border: 1px solid rgba(0, 52, 101, 0.2);
+      }
+      .penguin-ice {
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        bottom: 18%;
+        height: 33%;
+        background: linear-gradient(180deg, #ffffff 0%, #e9f8ff 85%);
+        border-radius: 46% 54% 43% 57% / 44% 39% 61% 56%;
+        box-shadow: inset 0 -14px 30px rgba(56, 122, 166, 0.12);
+        border: 1px solid rgba(0, 52, 101, 0.14);
+      }
+      .penguin-animal {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        line-height: 1;
+        user-select: none;
+      }
+      .penguin-animal--bird {
+        font-size: clamp(14px, 2.1vw, 18px);
+        filter: saturate(1.2);
+      }
+      .penguin-animal--penguin {
+        font-size: clamp(18px, 3vw, 28px);
+      }
+      .penguin-animal--orca {
+        font-size: clamp(22px, 4vw, 34px);
+      }
+      .penguin-animal--shark {
+        font-size: clamp(26px, 4.3vw, 38px);
+      }
+      .penguin-frost {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
     </style>
     """,
         unsafe_allow_html=True,
+    )
+
+
+def inject_ios_webapp_meta() -> None:
+    """Ajoute des meta tags pour une experience bookmark iOS."""
+    components.html(
+        """
+        <script>
+        (function() {
+          const doc = window.parent.document;
+          const head = doc.head;
+          function ensureMeta(name, content) {
+            let el = head.querySelector(`meta[name="${name}"]`);
+            if (!el) {
+              el = doc.createElement("meta");
+              el.setAttribute("name", name);
+              head.appendChild(el);
+            }
+            el.setAttribute("content", content);
+          }
+          ensureMeta("apple-mobile-web-app-capable", "yes");
+          ensureMeta("apple-mobile-web-app-status-bar-style", "black-translucent");
+          ensureMeta("apple-mobile-web-app-title", "Penguin");
+          ensureMeta("theme-color", "#003465");
+          let icon = head.querySelector('link[rel="apple-touch-icon"]');
+          if (!icon) {
+            icon = doc.createElement("link");
+            icon.setAttribute("rel", "apple-touch-icon");
+            head.appendChild(icon);
+          }
+          icon.setAttribute(
+            "href",
+            "data:image/svg+xml;utf8," +
+            encodeURIComponent(
+              `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'>
+                 <defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
+                   <stop stop-color='#bde8ff'/><stop offset='1' stop-color='#003465'/>
+                 </linearGradient></defs>
+                 <rect width='180' height='180' rx='36' fill='url(#g)'/>
+                 <text x='90' y='112' text-anchor='middle' font-size='90'>🐧</text>
+               </svg>`
+            )
+          );
+        })();
+        </script>
+        """,
+        height=0,
+        width=0,
     )
 
 
@@ -267,6 +364,125 @@ def get_cookie_manager() -> Any:
         return SessionCookieFallback()
 
 
+def render_ios_bookmark_help() -> None:
+    """Affiche une aide simple pour ajouter l'app en bookmark iOS."""
+    with st.expander("📱 Installer sur iPhone (bookmark ecran d'accueil)"):
+        st.markdown(
+            """
+1. Ouvre l'app dans **Safari**.
+2. Appuie sur **Partager** (carré avec flèche vers le haut).
+3. Choisis **Sur l'ecran d'accueil**.
+4. Valide **Ajouter**.
+
+Ensuite l'app se lance en mode web-app plein ecran, comme une mini application.
+"""
+        )
+
+
+def _position(seed: int, idx: int, x_min: float, x_max: float, y_min: float, y_max: float) -> tuple[float, float]:
+    """Genere une position stable pour placer un animal."""
+    x_span = x_max - x_min
+    y_span = y_max - y_min
+    # Formule deterministe: meme compte => meme scene.
+    t1 = (seed * 97 + idx * 37 + idx * idx * 11) % 1000
+    t2 = (seed * 53 + idx * 73 + idx * idx * 7) % 1000
+    x = x_min + (t1 / 1000.0) * x_span
+    y = y_min + (t2 / 1000.0) * y_span
+    return x, y
+
+
+def _animals_html(
+    emoji: str,
+    count: int,
+    css_class: str,
+    seed: int,
+    zone: tuple[float, float, float, float],
+    max_display: int,
+) -> tuple[str, int]:
+    """Construit le HTML des animaux et retourne le nombre masque."""
+    x_min, x_max, y_min, y_max = zone
+    shown = min(max(count, 0), max_display)
+    parts: list[str] = []
+    for i in range(shown):
+        x, y = _position(seed, i, x_min, x_max, y_min, y_max)
+        wobble = math.sin((seed + i) / 8.0) * 1.5
+        parts.append(
+            (
+                f'<span class="penguin-animal {css_class}" '
+                f'style="left:{x:.2f}%; top:{(y + wobble):.2f}%;">{emoji}</span>'
+            )
+        )
+    hidden = max(count - shown, 0)
+    return "".join(parts), hidden
+
+
+def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
+    """Rendu illustre de la banquise avec les bons animaux."""
+    birds_html, birds_hidden = _animals_html(
+        "🐦",
+        fauna["gulls"],
+        "penguin-animal--bird",
+        user_id + 11,
+        (8, 92, 8, 39),
+        max_display=90,
+    )
+    penguins_html, penguins_hidden = _animals_html(
+        "🐧",
+        fauna["penguins"],
+        "penguin-animal--penguin",
+        user_id + 29,
+        (20, 80, 53, 77),
+        max_display=70,
+    )
+    orcas_html, orcas_hidden = _animals_html(
+        "🐋",
+        fauna["orcas"],
+        "penguin-animal--orca",
+        user_id + 43,
+        (10, 90, 70, 92),
+        max_display=18,
+    )
+    sharks_html, sharks_hidden = _animals_html(
+        "🦈",
+        fauna["sharks"],
+        "penguin-animal--shark",
+        user_id + 67,
+        (12, 88, 78, 96),
+        max_display=14,
+    )
+
+    frost = []
+    for i in range(14):
+        x, y = _position(user_id + 101, i, 4, 96, 6, 42)
+        frost.append(f'<span class="penguin-frost" style="left:{x:.2f}%; top:{y:.2f}%;"></span>')
+
+    st.markdown(
+        f"""
+        <div class="penguin-scene">
+          {"".join(frost)}
+          <div class="penguin-ice"></div>
+          {birds_html}
+          {penguins_html}
+          {orcas_html}
+          {sharks_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    chips = []
+    if birds_hidden:
+        chips.append(f"🐦 +{birds_hidden}")
+    if penguins_hidden:
+        chips.append(f"🐧 +{penguins_hidden}")
+    if orcas_hidden:
+        chips.append(f"🐋 +{orcas_hidden}")
+    if sharks_hidden:
+        chips.append(f"🦈 +{sharks_hidden}")
+    if chips:
+        st.caption("Animaux supplementaires hors ecran pour garder une vue lisible : " + " • ".join(chips))
+
+
 def init_session() -> None:
     st.session_state.setdefault("user_id", None)
     st.session_state.setdefault("show_reset_modal", False)
@@ -278,7 +494,7 @@ def logout() -> None:
     st.session_state["show_reset_modal"] = False
 
 
-def auth_screen(cookie_manager: stx.CookieManager) -> None:
+def auth_screen(cookie_manager: Any) -> None:
     st.markdown("## 🐧 Penguin")
     st.caption(
         "Version locale de confiance: choisis ton pseudo, et l'app garde ton compte + tes jours en memoire."
@@ -404,17 +620,17 @@ def render_vue(user: dict[str, Any]) -> None:
     days = int(user["days"])
     fauna = breakdown_days(days)
     st.markdown(f"## 🧊 Vue illustree - Jour {days}")
-    st.markdown(
-        f"""
-        <div class="penguin-card">
-            <p><strong>Requins :</strong> {emoji_cloud("🦈", fauna["sharks"], 10)}</p>
-            <p><strong>Orques :</strong> {emoji_cloud("🐋", fauna["orcas"], 10)}</p>
-            <p><strong>Pingouins :</strong> {emoji_cloud("🐧", fauna["penguins"], 20)}</p>
-            <p><strong>Mouettes :</strong> {emoji_cloud("🐦", fauna["gulls"], 30)}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.caption("La scene ci-dessous affiche la banquise avec les bons animaux selon ton compteur.")
+    render_banquise_scene(int(user["id"]), fauna)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Mouettes", fauna["gulls"])
+        st.metric("Orques", fauna["orcas"])
+    with c2:
+        st.metric("Pingouins", fauna["penguins"])
+        st.metric("Requins", fauna["sharks"])
+
     ex = breakdown_days(256)
     st.code(
         f"Jour 256 -> {ex['orcas']} orque(s), {ex['penguins']} pingouin(s), {ex['gulls']} mouette(s)",
@@ -462,7 +678,7 @@ def render_amis(user: dict[str, Any]) -> None:
                     st.rerun()
 
 
-def render_profil(user: dict[str, Any], cookie_manager: stx.CookieManager) -> None:
+def render_profil(user: dict[str, Any], cookie_manager: Any) -> None:
     days = int(user["days"])
     fauna = breakdown_days(days)
     friend_count = len(list_friend_progress(int(user["id"])))
@@ -498,6 +714,7 @@ def render_profil(user: dict[str, Any], cookie_manager: stx.CookieManager) -> No
 
 def run_app() -> None:
     inject_css()
+    inject_ios_webapp_meta()
     init_database()
     init_session()
     cookie_manager = get_cookie_manager()
@@ -511,6 +728,7 @@ def run_app() -> None:
 
     if st.session_state["user_id"] is None:
         auth_screen(cookie_manager)
+        render_ios_bookmark_help()
         st.stop()
 
     current_user = get_user_by_id(int(st.session_state["user_id"]))
@@ -537,6 +755,8 @@ def run_app() -> None:
         render_amis(current_user)
     else:
         render_profil(current_user, cookie_manager)
+
+    render_ios_bookmark_help()
 
 
 if __name__ == "__main__":
