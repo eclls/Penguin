@@ -2,17 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import os
-import secrets
 import sqlite3
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
-
-PASSWORD_ITERATIONS = 200_000
 
 st.set_page_config(
     page_title="Penguin",
@@ -100,39 +95,10 @@ def init_database() -> None:
         )
 
 
-def _hash_password(password: str) -> str:
-    salt = secrets.token_bytes(16)
-    pwd_hash = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt,
-        PASSWORD_ITERATIONS,
-    )
-    return f"{salt.hex()}${pwd_hash.hex()}"
-
-
-def _verify_password(password: str, encoded: str) -> bool:
-    try:
-        salt_hex, hash_hex = encoded.split("$", maxsplit=1)
-    except ValueError:
-        return False
-    salt = bytes.fromhex(salt_hex)
-    expected = bytes.fromhex(hash_hex)
-    candidate = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt,
-        PASSWORD_ITERATIONS,
-    )
-    return hmac.compare_digest(candidate, expected)
-
-
-def register_user(username: str, password: str, starting_days: int = 0) -> tuple[bool, str]:
+def register_user(username: str, starting_days: int = 0) -> tuple[bool, str]:
     clean_username = username.strip()
     if len(clean_username) < 3:
         return False, "Le nom d'utilisateur doit contenir au moins 3 caracteres."
-    if len(password) < 6:
-        return False, "Le mot de passe doit contenir au moins 6 caracteres."
     if starting_days < 0:
         return False, "Le nombre de jours ne peut pas etre negatif."
 
@@ -140,14 +106,14 @@ def register_user(username: str, password: str, starting_days: int = 0) -> tuple
         with _connect() as conn:
             conn.execute(
                 "INSERT INTO users (username, password_hash, days) VALUES (?, ?, ?)",
-                (clean_username, _hash_password(password), int(starting_days)),
+                (clean_username, "local-trust-no-password", int(starting_days)),
             )
     except sqlite3.IntegrityError:
         return False, "Ce nom d'utilisateur existe deja."
     return True, "Compte cree avec succes."
 
 
-def authenticate_user(username: str, password: str) -> dict[str, Any] | None:
+def authenticate_user(username: str) -> dict[str, Any] | None:
     with _connect() as conn:
         row = conn.execute(
             "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
@@ -155,10 +121,7 @@ def authenticate_user(username: str, password: str) -> dict[str, Any] | None:
         ).fetchone()
     if row is None:
         return None
-    user = dict(row)
-    if not _verify_password(password, user["password_hash"]):
-        return None
-    return user
+    return dict(row)
 
 
 def get_user_by_id(user_id: int) -> dict[str, Any] | None:
@@ -281,18 +244,19 @@ def logout() -> None:
 
 def auth_screen() -> None:
     st.markdown("## 🐧 Penguin")
-    st.caption("Version mobile-first mono-fichier. Depoiement: `streamlit run app.py`.")
+    st.caption(
+        "Version locale de confiance: connexion par pseudo uniquement (sans mot de passe)."
+    )
     tab_login, tab_signup = st.tabs(["Connexion", "Creer un compte"])
 
     with tab_login:
         with st.form("login_form", clear_on_submit=False):
             username = st.text_input("Nom d'utilisateur")
-            password = st.text_input("Mot de passe", type="password")
-            submit = st.form_submit_button("Se connecter", use_container_width=True, type="primary")
+            submit = st.form_submit_button("Entrer", use_container_width=True, type="primary")
         if submit:
-            user = authenticate_user(username, password)
+            user = authenticate_user(username)
             if user is None:
-                st.error("Identifiants invalides.")
+                st.error("Pseudo introuvable. Cree un compte.")
             else:
                 st.session_state["user_id"] = int(user["id"])
                 st.session_state["show_opening_modal"] = True
@@ -301,8 +265,6 @@ def auth_screen() -> None:
     with tab_signup:
         with st.form("signup_form", clear_on_submit=False):
             username = st.text_input("Nom d'utilisateur", key="signup_name")
-            password = st.text_input("Mot de passe", type="password", key="signup_pwd")
-            confirm = st.text_input("Confirmer", type="password", key="signup_confirm")
             starting_days = st.number_input(
                 "Ajouter un nombre de jours (initialisation)",
                 min_value=0,
@@ -311,14 +273,11 @@ def auth_screen() -> None:
             )
             submit = st.form_submit_button("Creer le compte", use_container_width=True)
         if submit:
-            if password != confirm:
-                st.error("Les mots de passe ne correspondent pas.")
-                return
-            ok, message = register_user(username, password, int(starting_days))
+            ok, message = register_user(username, int(starting_days))
             if not ok:
                 st.error(message)
                 return
-            user = authenticate_user(username, password)
+            user = authenticate_user(username)
             if user is None:
                 st.error("Echec de connexion apres creation.")
                 return

@@ -4,7 +4,7 @@ Application Streamlit **mobile-first** en **mono-fichier** (`app.py`) pour simpl
 
 ## Fonctionnalites
 
-- Authentification (creation de compte + connexion).
+- Authentification locale simple par pseudo (sans mot de passe).
 - Compteur `Jour X`.
 - Conversion stricte :
   - `1 jour = 1 mouette`
