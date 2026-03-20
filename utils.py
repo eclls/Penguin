@@ -40,6 +40,23 @@ def inject_penguin_css() -> None:
         .stApp {
             background: linear-gradient(180deg, #bde8ff 0%, #eaf7ff 35%, #f6fafe 100%) !important;
         }
+        .block-container {
+            max-width: 560px;
+            padding-top: 1rem;
+            padding-bottom: 5.5rem;
+        }
+        [data-testid="stSidebar"] {
+            display: none;
+        }
+        #MainMenu, footer, .stDeployButton {
+            visibility: hidden;
+        }
+        .stButton > button,
+        .stFormSubmitButton > button {
+            min-height: 46px;
+            border-radius: 14px;
+            font-weight: 600;
+        }
         .penguin-card {
             background: rgba(255, 255, 255, 0.92);
             border-radius: 1rem;
@@ -62,10 +79,68 @@ def inject_penguin_css() -> None:
         .penguin-muted {
             color: #4f6474;
         }
+        .penguin-nav-wrap {
+            position: fixed;
+            bottom: 0.8rem;
+            left: 0;
+            right: 0;
+            z-index: 999;
+        }
+        .penguin-nav {
+            margin: 0 auto;
+            width: min(540px, calc(100vw - 1rem));
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 52, 101, 0.14);
+            border-radius: 16px;
+            box-shadow: 0 10px 24px rgba(0, 52, 101, 0.15);
+            padding: 0.35rem 0.6rem;
+        }
+        @media (max-width: 768px) {
+            .block-container {
+                padding-top: 0.7rem;
+                padding-left: 0.7rem;
+                padding-right: 0.7rem;
+                padding-bottom: 6rem;
+            }
+            h1, h2, h3 {
+                line-height: 1.2;
+            }
+            [data-testid="stMetricValue"] {
+                font-size: 1.5rem;
+            }
+        }
     </style>
     """,
         unsafe_allow_html=True,
     )
+
+
+def render_mobile_nav(active: str) -> None:
+    """Affiche une navigation compacte optimisee mobile."""
+    st.markdown('<div class="penguin-nav-wrap"><div class="penguin-nav">', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.page_link(
+            "app.py",
+            label="Banquise" if active != "banquise" else "● Banquise",
+            icon="🏠",
+            use_container_width=True,
+        )
+    with c2:
+        st.page_link(
+            "pages/1_Vue_Illustree.py",
+            label="Vue" if active != "vue" else "● Vue",
+            icon="🧊",
+            use_container_width=True,
+        )
+    with c3:
+        st.page_link(
+            "pages/3_Amis.py",
+            label="Amis" if active != "amis" else "● Amis",
+            icon="👥",
+            use_container_width=True,
+        )
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
 
 def _db_path() -> Path:

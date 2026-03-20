@@ -2,9 +2,16 @@
 
 import streamlit as st
 
-from utils import breakdown_days, get_user_by_id, inject_penguin_css, list_friend_progress, set_user_days
+from utils import (
+    breakdown_days,
+    get_user_by_id,
+    inject_penguin_css,
+    list_friend_progress,
+    render_mobile_nav,
+    set_user_days,
+)
 
-st.set_page_config(page_title="Penguin - Profil", page_icon="👤", layout="wide")
+st.set_page_config(page_title="Penguin - Profil", page_icon="👤", layout="centered")
 inject_penguin_css()
 
 if st.session_state.get("user_id") is None:
@@ -23,10 +30,10 @@ fauna = breakdown_days(days)
 friend_count = len(list_friend_progress(int(user["id"])))
 
 st.markdown(f"## 👤 Profil de {user['username']}")
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 col1.metric("Jour actuel", days)
 col2.metric("Amis", friend_count)
-col3.metric("Progression requins", fauna["sharks"])
+st.metric("Progression requins", fauna["sharks"])
 
 st.markdown("### Ajustement manuel")
 with st.form("profile_adjust_days"):
@@ -55,10 +62,4 @@ if st.button("🚪 Se deconnecter", use_container_width=True):
     st.session_state["show_opening_modal"] = False
     st.rerun()
 
-nav1, nav2, nav3 = st.columns(3)
-with nav1:
-    st.page_link("app.py", label="Banquise", icon="🏠")
-with nav2:
-    st.page_link("pages/1_Vue_Illustree.py", label="Vue Illustree", icon="🧊")
-with nav3:
-    st.page_link("pages/3_Amis.py", label="Amis", icon="👥")
+render_mobile_nav(active="profil")

@@ -11,13 +11,14 @@ from utils import (
     init_database,
     inject_penguin_css,
     register_user,
+    render_mobile_nav,
     set_user_days,
 )
 
 st.set_page_config(
     page_title="Penguin",
     page_icon="🐧",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="collapsed",
 )
 
@@ -97,17 +98,14 @@ def _opening_modal(user_id: int) -> None:
         st.info(
             "Sur mobile, secoue ton telephone puis clique sur le bouton de reset pour confirmer."
         )
-        col_reset, col_continue = st.columns(2)
-        with col_reset:
-            if st.button("Secousse detectee: reset", type="primary", use_container_width=True):
-                set_user_days(user_id, 0)
-                st.session_state["show_opening_modal"] = False
-                st.success("Compteur remis a zero.")
-                st.rerun()
-        with col_continue:
-            if st.button("Continuer", use_container_width=True):
-                st.session_state["show_opening_modal"] = False
-                st.rerun()
+        if st.button("📳 J'ai secoue: reset", type="primary", use_container_width=True):
+            set_user_days(user_id, 0)
+            st.session_state["show_opening_modal"] = False
+            st.success("Compteur remis a zero.")
+            st.rerun()
+        if st.button("Continuer sans reset", use_container_width=True):
+            st.session_state["show_opening_modal"] = False
+            st.rerun()
 
     _dialog()
 
@@ -129,9 +127,10 @@ def _render_banquise(days: int) -> None:
         unsafe_allow_html=True,
     )
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2 = st.columns(2)
     col1.metric("Mouettes", fauna["gulls"], help="1 jour = 1 mouette")
     col2.metric("Pingouins", fauna["penguins"], help="30 mouettes = 1 pingouin")
+    col3, col4 = st.columns(2)
     col3.metric("Orques", fauna["orcas"], help="6 pingouins = 1 orque")
     col4.metric("Requins", fauna["sharks"], help="2 orques = 1 requin")
 
@@ -155,26 +154,33 @@ def _render_banquise(days: int) -> None:
 
 def _render_controls(user_id: int, current_days: int) -> None:
     st.markdown("### Actions")
-    col_inc, col_manual = st.columns([1, 2])
-    with col_inc:
-        if st.button("✅ Ajouter 1 jour", use_container_width=True, type="primary"):
+    quick1, quick2, quick3 = st.columns(3)
+    with quick1:
+        if st.button("+1 jour", use_container_width=True, type="primary"):
             add_days(user_id, 1)
             st.rerun()
-
-    with col_manual:
-        with st.form("manual_add_form", clear_on_submit=True):
-            amount = st.number_input(
-                "Ajouter un nombre de jours",
-                min_value=0,
-                value=0,
-                step=1,
-                help="Utile si tu avais deja commence avant d'installer l'app.",
-            )
-            submit = st.form_submit_button("Ajouter", use_container_width=True)
-        if submit and int(amount) > 0:
-            add_days(user_id, int(amount))
-            st.success(f"{int(amount)} jours ajoutes.")
+    with quick2:
+        if st.button("+7 jours", use_container_width=True):
+            add_days(user_id, 7)
             st.rerun()
+    with quick3:
+        if st.button("+30 jours", use_container_width=True):
+            add_days(user_id, 30)
+            st.rerun()
+
+    with st.form("manual_add_form", clear_on_submit=True):
+        amount = st.number_input(
+            "Ajouter un nombre de jours",
+            min_value=0,
+            value=0,
+            step=1,
+            help="Utile si tu avais deja commence avant d'installer l'app.",
+        )
+        submit = st.form_submit_button("Ajouter", use_container_width=True)
+    if submit and int(amount) > 0:
+        add_days(user_id, int(amount))
+        st.success(f"{int(amount)} jours ajoutes.")
+        st.rerun()
 
     with st.expander("Definir exactement mon compteur (option avancee)"):
         with st.form("set_exact_days_form", clear_on_submit=False):
@@ -212,15 +218,8 @@ st.markdown(
 _render_banquise(int(current_user["days"]))
 _render_controls(int(current_user["id"]), int(current_user["days"]))
 
-with st.expander("Navigation"):
-    n1, n2, n3 = st.columns(3)
-    with n1:
-        st.page_link("app.py", label="Banquise", icon="🏠")
-    with n2:
-        st.page_link("pages/1_Vue_Illustree.py", label="Vue Illustree", icon="🧊")
-    with n3:
-        st.page_link("pages/3_Amis.py", label="Amis", icon="👥")
-
 if st.button("Se deconnecter", use_container_width=True):
     _logout()
     st.rerun()
+
+render_mobile_nav(active="banquise")

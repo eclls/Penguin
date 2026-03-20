@@ -9,9 +9,10 @@ from utils import (
     inject_penguin_css,
     list_discoverable_users,
     list_friend_progress,
+    render_mobile_nav,
 )
 
-st.set_page_config(page_title="Penguin - Amis", page_icon="👥", layout="wide")
+st.set_page_config(page_title="Penguin - Amis", page_icon="👥", layout="centered")
 inject_penguin_css()
 
 if st.session_state.get("user_id") is None:
@@ -48,11 +49,10 @@ else:
     for friend in friends:
         fauna = breakdown_days(int(friend["days"]))
         with st.container(border=True):
-            c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-            c1.write(f"**{friend['username']}**")
-            c2.metric("Jour", int(friend["days"]))
-            c3.metric("Orques", fauna["orcas"])
-            c4.metric("Requins", fauna["sharks"])
+            st.write(f"**{friend['username']}**")
+            c1, c2 = st.columns(2)
+            c1.metric("Jour", int(friend["days"]))
+            c2.metric("Orques/Requins", f"{fauna['orcas']}/{fauna['sharks']}")
 
 discoverable = list_discoverable_users(int(user["id"]), limit=8)
 if discoverable:
@@ -71,10 +71,7 @@ if discoverable:
                         st.warning(message)
                     st.rerun()
 
-nav1, nav2, nav3 = st.columns(3)
-with nav1:
-    st.page_link("app.py", label="Banquise", icon="🏠")
-with nav2:
-    st.page_link("pages/1_Vue_Illustree.py", label="Vue Illustree", icon="🧊")
-with nav3:
-    st.page_link("pages/2_Profil.py", label="Profil", icon="👤")
+with st.expander("Profil"):
+    st.page_link("pages/2_Profil.py", label="Ouvrir mon profil", icon="👤")
+
+render_mobile_nav(active="amis")

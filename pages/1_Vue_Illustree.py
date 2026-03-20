@@ -2,12 +2,12 @@
 
 import streamlit as st
 
-from utils import breakdown_days, emoji_cloud, get_user_by_id, inject_penguin_css
+from utils import breakdown_days, emoji_cloud, get_user_by_id, inject_penguin_css, render_mobile_nav
 
 st.set_page_config(
     page_title="Penguin - Vue illustree",
     page_icon="🧊",
-    layout="wide",
+    layout="centered",
 )
 inject_penguin_css()
 
@@ -41,9 +41,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
 col1.metric("Requins", fauna["sharks"])
 col2.metric("Orques", fauna["orcas"])
+col3, col4 = st.columns(2)
 col3.metric("Pingouins", fauna["penguins"])
 col4.metric("Mouettes", fauna["gulls"])
 
@@ -54,10 +55,7 @@ st.code(
     language="text",
 )
 
-nav1, nav2, nav3 = st.columns(3)
-with nav1:
-    st.page_link("app.py", label="Banquise", icon="🏠")
-with nav2:
-    st.page_link("pages/3_Amis.py", label="Amis", icon="👥")
-with nav3:
-    st.page_link("pages/2_Profil.py", label="Profil", icon="👤")
+with st.expander("Profil"):
+    st.page_link("pages/2_Profil.py", label="Ouvrir mon profil", icon="👤")
+
+render_mobile_nav(active="vue")
