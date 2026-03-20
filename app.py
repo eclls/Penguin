@@ -25,96 +25,49 @@ st.set_page_config(
 
 
 def inject_css() -> None:
+    """Inject Tailwind, fonts, Material Symbols et styles fidèles au HTML fourni."""
     st.markdown(
         """
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#003465",
+              "primary-container": "#004b8d",
+              "secondary": "#326578",
+              "background": "#f6fafe",
+              "surface-container-low": "#f0f4f8",
+              "surface-container-highest": "#dfe3e7",
+              "on-surface": "#171c1f",
+              "on-surface-variant": "#424750",
+              "error": "#ba1a1a",
+              "secondary-container": "#b5e7fe"
+            },
+            fontFamily: { "headline": ["Plus Jakarta Sans"], "body": ["Be Vietnam Pro"] },
+            borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }
+          }
+        }
+      }
+    </script>
     <style>
       .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-      .stApp { background: #f6fafe !important; font-family: 'Be Vietnam Pro', sans-serif; }
-      .block-container { max-width: 480px; padding: 0 1.5rem 7rem; padding-top: 5.5rem; }
+      body, .stApp { font-family: 'Be Vietnam Pro', sans-serif; background: #f6fafe !important; }
+      .block-container { max-width: 28rem; padding: 0 1.5rem 8rem; padding-top: 6rem; }
       [data-testid="stSidebar"] { display: none; }
       #MainMenu, footer, .stDeployButton { visibility: hidden; }
-      .stButton > button, .stFormSubmitButton > button {
-        min-height: 46px; border-radius: 1rem; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif;
-      }
-      .penguin-header {
-        position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-        background: rgba(255,255,255,0.8); backdrop-filter: blur(24px);
-        box-shadow: 0 24px 48px rgba(0,52,101,0.06);
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 0 1.5rem; height: 4rem;
-      }
-      .penguin-header-logo { display: flex; align-items: center; gap: 0.5rem; }
-      .penguin-header-logo .ms { font-size: 28px; color: #003465; }
-      .penguin-header-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; color: #003465; }
-      .penguin-header-right { display: flex; align-items: center; gap: 1rem; }
-      .penguin-jour-badge {
-        font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1rem;
-        color: #003465; background: rgba(0,52,101,0.05);
-        padding: 0.25rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(0,52,101,0.1);
-      }
-      .penguin-stats-card {
-        background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);
-        padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;
-        backdrop-filter: blur(8px); display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 0.5rem; text-align: center;
-      }
-      .penguin-stats-item { display: flex; flex-direction: column; align-items: center; }
-      .penguin-stats-item.border-l { border-left: 1px solid rgba(255,255,255,0.6); }
-      .penguin-stats-item .ms { font-size: 1.25rem; }
-      .penguin-stats-item .val { font-size: 10px; font-weight: 700; }
-      .penguin-stats-item .lbl { font-size: 8px; text-transform: uppercase; color: #424750; }
-      .penguin-iceberg-wrap {
-        width: 100%; aspect-ratio: 1; position: relative; margin-bottom: 2rem;
-      }
-      .penguin-iceberg-bg {
-        position: absolute; inset: 0; background: rgba(181,233,254,0.3);
-        border-radius: 0.75rem; overflow: hidden;
-      }
-      .penguin-iceberg-bg .water { position: absolute; bottom: 0; left: 0; right: 0; height: 33%; background: rgba(0,52,101,0.1); }
-      .penguin-iceberg-block {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-2deg);
-        width: 80%; height: 50%; background: #fff; border-radius: 0.75rem;
-        box-shadow: 0 8px 24px rgba(0,52,101,0.12); border: 1px solid rgba(255,255,255,0.4);
-        display: flex; align-items: center; justify-content: center;
-      }
+      .arctic-gradient { background: linear-gradient(135deg, #003465 0%, #004b8d 100%); }
+      .snow-glow { box-shadow: 0 24px 48px rgba(0, 52, 101, 0.06); }
+      .glass-panel { background: rgba(255,255,255,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
       .penguin-animal { position: absolute; transform: translate(-50%,-50%); line-height: 1; user-select: none; }
-      .penguin-animal .ms { font-size: inherit; }
-      .penguin-animal--bird .ms { color: #326578; }
-      .penguin-animal--penguin .ms { color: #003465; }
-      .penguin-animal--orca .ms { color: #1e3a5f; }
-      .penguin-animal--shark .ms { color: #ba1a1a; }
-      .penguin-dodo { display: flex; flex-direction: column; align-items: center; opacity: 0.4; filter: grayscale(1); }
-      .penguin-dodo .ms { font-size: 64px !important; color: #003465 !important; }
-      .penguin-bento { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
-      .penguin-bento-card {
-        background: #f0f4f8; padding: 1.25rem; border-radius: 0.5rem;
-        display: flex; flex-direction: column; gap: 0.5rem;
-      }
-      .penguin-bento-card .ms { color: #326578; }
-      .penguin-bento-card .title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: #171c1f; }
-      .penguin-bento-card .sub { font-size: 0.75rem; color: #424750; }
-      .penguin-nav {
-        position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-        background: rgba(255,255,255,0.8); backdrop-filter: blur(24px);
-        box-shadow: 0 -12px 32px rgba(0,52,101,0.04);
-        border-radius: 2rem 2rem 0 0;
-        display: flex; justify-content: space-around; align-items: center;
-        padding: 0.75rem 1rem 1.5rem;
-      }
-      .penguin-nav-btn {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 0.5rem 1.25rem; border-radius: 9999px;
-        text-decoration: none; color: #64748b; font-size: 10px;
-        font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
-      }
-      .penguin-nav-btn.active { background: #003465; color: #fff; }
-      .penguin-nav-btn .ms { font-size: 24px; margin-bottom: 2px; }
-      .penguin-error-card {
-        background: rgba(255,237,237,0.96); border: 1px solid rgba(186,26,26,0.25);
-        border-radius: 0.9rem; padding: 0.8rem; margin-bottom: 0.8rem;
-      }
+      .penguin-animal--bird .material-symbols-outlined { color: #326578; }
+      .penguin-animal--penguin .material-symbols-outlined { color: #003465; }
+      .penguin-animal--orca .material-symbols-outlined { color: #1e3a5f; }
+      .penguin-animal--shark .material-symbols-outlined { color: #ba1a1a; }
+      .penguin-error-card { background: rgba(255,237,237,0.96); border: 1px solid rgba(186,26,26,0.25); border-radius: 0.9rem; padding: 0.8rem; margin-bottom: 0.8rem; }
     </style>
     """,
         unsafe_allow_html=True,
@@ -462,7 +415,7 @@ def _animals_html(
 
 
 def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
-    """Rendu illustre de la banquise avec les bons animaux (Material Symbols). J=0 => aucun animal."""
+    """Iceberg (Hero Visualization) - fidèle au HTML. J=0 => Dodo..., J>0 => animaux dynamiques."""
     days = fauna["days"]
     birds_html, birds_hidden = _animals_html(
         "flutter_dash",
@@ -501,28 +454,41 @@ def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
         size="28px",
     )
 
-    # J=0 : banquise vide (Dodo...). J>0 : animaux dynamiques
+    # J=0 : The Fallen Penguin (Dodo...). J>0 : animaux dynamiques
     if days == 0:
         inner = """
-        <div class="penguin-dodo">
-          <span class="ms material-symbols-outlined">ice_skating</span>
-          <span style="font-size:12px;font-weight:700;margin-top:8px">Dodo...</span>
+        <div class="flex flex-col items-center opacity-40 grayscale">
+          <span class="material-symbols-outlined text-primary" style="font-size: 64px;">ice_skating</span>
+          <span class="text-xs font-bold mt-2">Dodo...</span>
         </div>
         """
     else:
-        inner = f"{birds_html}{penguins_html}{orcas_html}{sharks_html}"
+        inner = f"""
+        <div class="absolute top-4 right-10 flex flex-col items-center">
+          <span class="material-symbols-outlined text-on-surface-variant" style="font-size: 32px;">flutter_dash</span>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-secondary mt-1">Mouette</span>
+        </div>
+        <div style="position:absolute;inset:0;pointer-events:none">
+          {birds_html}
+          {penguins_html}
+          {orcas_html}
+          {sharks_html}
+        </div>
+        """
 
     st.markdown(
         f"""
-        <div class="penguin-iceberg-wrap">
-          <div class="penguin-iceberg-bg"><div class="water"></div></div>
-          <div class="penguin-iceberg-block">
-            <div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+        <div class="w-full max-w-md aspect-square relative mb-8">
+          <div class="absolute inset-0 bg-secondary-container/30 rounded-xl overflow-hidden">
+            <div class="absolute bottom-0 w-full h-1/3 bg-primary/10"></div>
+          </div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/2 bg-white rounded-xl shadow-lg transform -rotate-2 flex flex-col items-center justify-center border border-white/40">
+            <div class="relative w-full h-full flex items-center justify-center">
               {inner}
             </div>
           </div>
-          <div style="position:absolute;top:10%;left:10%;opacity:0.2"><span class="material-symbols-outlined" style="font-size:48px">water_drop</span></div>
-          <div style="position:absolute;bottom:20%;right:4%;opacity:0.1"><span class="material-symbols-outlined" style="font-size:56px">sailing</span></div>
+          <div class="absolute top-10 left-10 opacity-20"><span class="material-symbols-outlined" style="font-size: 48px;">water_drop</span></div>
+          <div class="absolute bottom-20 right-4 opacity-10"><span class="material-symbols-outlined" style="font-size: 56px;">sailing</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -633,79 +599,105 @@ def auth_screen(cookie_manager: Any) -> None:
     st.rerun()
 
 
-def opening_modal(user_id: int) -> None:
-    @st.dialog("Tu as tué le pinguin ?")
-    def _dialog() -> None:
-        st.markdown(
-            """
-            <div style="text-align:center;padding:1rem 0">
-              <div style="width:96px;height:96px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#003465 0%,#004b8d 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 24px 48px rgba(0,52,101,0.2)">
-                <span class="material-symbols-outlined" style="font-size:48px;color:white">ice_skating</span>
-              </div>
-              <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.5rem;color:#003465;margin-bottom:0.75rem">Tu as tué le pinguin ?</h2>
-              <p style="color:#424750;margin-bottom:2rem;line-height:1.5">Secoue toi pour le ramener sur sa banquise !</p>
+def render_reset_modal_overlay() -> None:
+    """
+    Pop-up ludique (Glass Overlay) - fidèle au HTML.
+    Shake detection : quand l'utilisateur secoue le téléphone, déclenche la réinitialisation.
+    Clic à côté / Annuler = pas de reset.
+    """
+    st.markdown(
+        """
+        <div id="penguin-reset-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:rgba(0,52,101,0.3);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
+          <div onclick="event.stopPropagation()" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);border-radius:0.75rem;padding:2rem;max-width:20rem;width:100%;box-shadow:0 32px 64px rgba(0,52,101,0.2);border:1px solid rgba(255,255,255,0.8);text-align:center">
+            <div style="width:96px;height:96px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#003465 0%,#004b8d 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 24px 48px rgba(0,52,101,0.2)">
+              <span class="material-symbols-outlined" style="font-size:48px;color:white">ice_skating</span>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Réinitialiser (Secouer)", type="primary", use_container_width=True):
-            set_user_days(user_id, 0)
-            st.session_state["show_reset_modal"] = False
-            st.success("Compteur remis à zéro.")
-            st.rerun()
-        if st.button("Annuler", use_container_width=True):
-            st.session_state["show_reset_modal"] = False
-            st.rerun()
+            <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.5rem;color:#003465;margin-bottom:0.75rem">Tu as tué le pinguin ?</h2>
+            <p style="color:#424750;margin-bottom:2rem;line-height:1.5">Secoue toi pour le ramener sur sa banquise !</p>
+            <a href="?reset_confirm=1" id="penguin-reset-btn" style="display:flex;align-items:center;justify-content:center;gap:0.75rem;width:100%;padding:1rem 1.5rem;background:linear-gradient(135deg,#003465 0%,#004b8d 100%);color:white;font-weight:700;border-radius:9999px;text-decoration:none;border:1px solid rgba(255,255,255,0.2);box-shadow:0 10px 20px rgba(0,52,101,0.3)">
+              <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">vibration</span>
+              Réinitialiser (Secouer)
+            </a>
+            <a href="?cancel=1" style="display:block;margin-top:1rem;color:#424750;font-size:0.875rem;text-decoration:none">Annuler</a>
+          </div>
+        </div>
+        <script>
+        (function(){
+          var overlay = document.getElementById('penguin-reset-overlay');
+          var path = window.location.pathname || '/';
 
-    _dialog()
+          if (window.DeviceMotionEvent) {
+            var lastShake = 0;
+            window.addEventListener('devicemotion', function(e) {
+              var a = e.accelerationIncludingGravity;
+              var total = Math.abs(a.x||0) + Math.abs(a.y||0) + Math.abs(a.z||0);
+              if (total > 25 && Date.now() - lastShake > 1500) {
+                lastShake = Date.now();
+                window.location.href = path + '?reset_confirm=1';
+              }
+            }, true);
+          }
+
+          overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+              window.location.href = path + '?cancel=1';
+            }
+          });
+        })();
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_header(user: dict[str, Any]) -> None:
-    """Barre fixe en haut : logo Penguin, Jour X, avatar."""
+    """TopAppBar fidèle au HTML : logo, Jour X, avatar."""
     days = int(user["days"])
     st.markdown(
         f"""
-        <div class="penguin-header">
-          <div class="penguin-header-logo">
-            <span class="ms material-symbols-outlined">ice_skating</span>
-            <span class="penguin-header-title">Penguin</span>
-          </div>
-          <div class="penguin-header-right">
-            <span class="penguin-jour-badge">Jour {days}</span>
-            <div style="width:40px;height:40px;border-radius:50%;background:#dfe3e7;display:flex;align-items:center;justify-content:center">
-              <span class="material-symbols-outlined" style="color:#003465;font-size:24px">person</span>
+        <header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl shadow-[0px_24px_48px_rgba(0,52,101,0.06)]">
+          <div class="flex justify-between items-center px-6 h-16 w-full">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary" style="font-size: 28px;">ice_skating</span>
+              <span class="font-headline font-black text-2xl tracking-tight text-primary">Penguin</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="font-headline font-bold text-lg text-primary bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Jour {days}</span>
+              <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">person</span>
+              </div>
             </div>
           </div>
-        </div>
+        </header>
         """,
         unsafe_allow_html=True,
     )
 
 
 def render_stats_card(fauna: dict[str, int]) -> None:
-    """Carte stats : Mouettes, Pingouins, Orques, Requins."""
+    """Conversion Legend / Wildlife Stats Card - fidèle au HTML."""
     st.markdown(
         f"""
-        <div class="penguin-stats-card">
-          <div class="penguin-stats-item">
-            <span class="ms material-symbols-outlined" style="color:#326578">flutter_dash</span>
-            <span class="val">{fauna["gulls"]}</span>
-            <span class="lbl">Mouettes</span>
+        <div class="w-full max-w-md bg-white/40 border border-white/60 p-4 rounded-lg mb-6 backdrop-blur-sm grid grid-cols-4 gap-2 text-center">
+          <div class="flex flex-col items-center">
+            <span class="material-symbols-outlined text-secondary text-xl">flutter_dash</span>
+            <span class="text-[10px] font-bold mt-1">{fauna["gulls"]}</span>
+            <span class="text-[8px] uppercase text-on-surface-variant">Mouettes</span>
           </div>
-          <div class="penguin-stats-item border-l">
-            <span class="ms material-symbols-outlined" style="color:#003465">ice_skating</span>
-            <span class="val">{fauna["penguins"]}</span>
-            <span class="lbl">Penguin</span>
+          <div class="flex flex-col items-center border-l border-white/60">
+            <span class="material-symbols-outlined text-primary text-xl">ice_skating</span>
+            <span class="text-[10px] font-bold mt-1">{fauna["penguins"]}</span>
+            <span class="text-[8px] uppercase text-on-surface-variant">Penguin</span>
           </div>
-          <div class="penguin-stats-item border-l">
-            <span class="ms material-symbols-outlined" style="color:#1e3a5f">water_ec</span>
-            <span class="val">{fauna["orcas"]}</span>
-            <span class="lbl">Orque</span>
+          <div class="flex flex-col items-center border-l border-white/60">
+            <span class="material-symbols-outlined text-blue-800 text-xl">water_ec</span>
+            <span class="text-[10px] font-bold mt-1">{fauna["orcas"]}</span>
+            <span class="text-[8px] uppercase text-on-surface-variant">Orque</span>
           </div>
-          <div class="penguin-stats-item border-l">
-            <span class="ms material-symbols-outlined" style="color:#ba1a1a">sailing</span>
-            <span class="val">{fauna["sharks"]}</span>
-            <span class="lbl">Requin</span>
+          <div class="flex flex-col items-center border-l border-white/60">
+            <span class="material-symbols-outlined text-error text-xl">sailing</span>
+            <span class="text-[10px] font-bold mt-1">{fauna["sharks"]}</span>
+            <span class="text-[8px] uppercase text-on-surface-variant">Requin</span>
           </div>
         </div>
         """,
@@ -714,19 +706,19 @@ def render_stats_card(fauna: dict[str, int]) -> None:
 
 
 def render_bento_grid() -> None:
-    """Grille bento : Océan, Danger."""
+    """Bento Grid Info Section - Océan, Danger."""
     st.markdown(
         """
-        <div class="penguin-bento">
-          <div class="penguin-bento-card">
-            <span class="material-symbols-outlined">waves</span>
-            <span class="title">Océan</span>
-            <span class="sub">-2°C Arctique</span>
+        <div class="grid grid-cols-2 gap-4 w-full max-w-md">
+          <div class="bg-surface-container-low p-5 rounded-lg flex flex-col gap-2">
+            <span class="material-symbols-outlined text-secondary">waves</span>
+            <span class="font-headline font-bold text-on-surface">Océan</span>
+            <span class="text-xs text-on-surface-variant">-2°C Arctique</span>
           </div>
-          <div class="penguin-bento-card">
-            <span class="material-symbols-outlined" style="color:#4f2b00">warning</span>
-            <span class="title">Danger</span>
-            <span class="sub">Requin & Orque</span>
+          <div class="bg-surface-container-low p-5 rounded-lg flex flex-col gap-2">
+            <span class="material-symbols-outlined text-amber-800">warning</span>
+            <span class="font-headline font-bold text-on-surface">Danger</span>
+            <span class="text-xs text-on-surface-variant">Requin & Orque</span>
           </div>
         </div>
         """,
@@ -735,14 +727,23 @@ def render_bento_grid() -> None:
 
 
 def render_banquise(user: dict[str, Any]) -> None:
-    """Vue Banquise unifiee : header, stats, iceberg, bento."""
+    """Vue Banquise : structure fidèle au HTML fourni."""
     days = int(user["days"])
     fauna = breakdown_days(days)
 
     render_header(user)
+    st.markdown(
+        """
+        <main class="flex-grow pt-24 pb-32 px-6 flex flex-col items-center justify-start relative overflow-hidden">
+          <div class="absolute top-40 -left-20 w-64 h-64 bg-surface-container-low rounded-xl rotate-12 -z-10" style="position:absolute;top:10rem;left:-5rem;width:16rem;height:16rem;background:#f0f4f8;border-radius:0.75rem;transform:rotate(12deg);z-index:-1"></div>
+          <div class="absolute bottom-60 -right-20 w-80 h-80 bg-surface-container-highest rounded-xl -rotate-6 -z-10" style="position:absolute;bottom:15rem;right:-5rem;width:20rem;height:20rem;background:#dfe3e7;border-radius:0.75rem;transform:rotate(-6deg);z-index:-1"></div>
+        """,
+        unsafe_allow_html=True,
+    )
     render_stats_card(fauna)
     render_banquise_scene(int(user["id"]), fauna)
     render_bento_grid()
+    st.markdown("</main>", unsafe_allow_html=True)
 
 
 def render_amis(user: dict[str, Any]) -> None:
@@ -846,8 +847,29 @@ def run_app() -> None:
             st.error("Session invalide. Reconnecte-toi.")
             st.stop()
 
+        user_id = int(current_user["id"])
+
+        if "reset_confirm" in st.query_params:
+            set_user_days(user_id, 0)
+            st.session_state["show_reset_modal"] = False
+            st.query_params.clear()
+            st.rerun()
+
+        if "cancel" in st.query_params:
+            st.session_state["show_reset_modal"] = False
+            st.query_params.clear()
+            st.rerun()
+
+        if "tab" in st.query_params:
+            t = st.query_params.get("tab", "Banquise")
+            if t in ("Banquise", "Amis", "Profil"):
+                st.session_state["tab"] = t
+            st.query_params.clear()
+            st.rerun()
+
         if st.session_state.get("show_reset_modal", False):
-            opening_modal(int(current_user["id"]))
+            render_reset_modal_overlay()
+            st.stop()
 
         tab = st.session_state.get("tab", "Banquise")
 
@@ -860,20 +882,25 @@ def run_app() -> None:
         else:
             render_profil(current_user, cookie_manager)
 
-        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-        nav_cols = st.columns(3)
-        with nav_cols[0]:
-            if st.button("🏠 Banquise", type="primary" if tab == "Banquise" else "secondary", use_container_width=True, key="nav_banquise"):
-                st.session_state["tab"] = "Banquise"
-                st.rerun()
-        with nav_cols[1]:
-            if st.button("👥 Amis", type="primary" if tab == "Amis" else "secondary", use_container_width=True, key="nav_amis"):
-                st.session_state["tab"] = "Amis"
-                st.rerun()
-        with nav_cols[2]:
-            if st.button("👤 Profil", type="primary" if tab == "Profil" else "secondary", use_container_width=True, key="nav_profil"):
-                st.session_state["tab"] = "Profil"
-                st.rerun()
+        st.markdown(
+            f"""
+            <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 backdrop-blur-xl shadow-[0px_-12px_32px_rgba(0,52,101,0.04)] rounded-t-[2rem] z-50" style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;padding:0.75rem 1rem 1.5rem;background:rgba(255,255,255,0.8);backdrop-filter:blur(24px);box-shadow:0 -12px 32px rgba(0,52,101,0.04);border-radius:2rem 2rem 0 0;z-index:50">
+              <a href="?tab=Banquise" style="display:flex;flex-direction:column;align-items:center;padding:0.5rem 1.25rem;border-radius:9999px;text-decoration:none;color:{"#003465" if tab == "Banquise" else "#64748b"};background:{"#003465" if tab == "Banquise" else "transparent"};color:{"white" if tab == "Banquise" else "#64748b"}">
+                <span class="material-symbols-outlined" style="font-size:24px">home</span>
+                <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px">Banquise</span>
+              </a>
+              <a href="?tab=Amis" style="display:flex;flex-direction:column;align-items:center;padding:0.5rem 1.25rem;border-radius:9999px;text-decoration:none;color:{"#003465" if tab == "Amis" else "#64748b"};background:{"#003465" if tab == "Amis" else "transparent"};color:{"white" if tab == "Amis" else "#64748b"}">
+                <span class="material-symbols-outlined" style="font-size:24px">group</span>
+                <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px">Amis</span>
+              </a>
+              <a href="?tab=Profil" style="display:flex;flex-direction:column;align-items:center;padding:0.5rem 1.25rem;border-radius:9999px;text-decoration:none;color:{"#003465" if tab == "Profil" else "#64748b"};background:{"#003465" if tab == "Profil" else "transparent"};color:{"white" if tab == "Profil" else "#64748b"}">
+                <span class="material-symbols-outlined" style="font-size:24px">person</span>
+                <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px">Profil</span>
+              </a>
+            </nav>
+            """,
+            unsafe_allow_html=True,
+        )
     except Exception:
         details = traceback.format_exc()
         set_persistent_error(
