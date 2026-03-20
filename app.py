@@ -442,14 +442,12 @@ def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
 
 def init_session() -> None:
     st.session_state.setdefault("user_id", None)
-    st.session_state.setdefault("show_reset_modal", False)
     st.session_state.setdefault("tab", "Banquise")
     st.session_state.setdefault("persistent_error", None)
 
 
 def logout() -> None:
     st.session_state["user_id"] = None
-    st.session_state["show_reset_modal"] = False
 
 
 def set_persistent_error(message: str, details: str | None = None) -> None:
@@ -528,59 +526,7 @@ def auth_screen(cookie_manager: Any) -> None:
         safe_cookie_delete(cookie_manager, COOKIE_NAME)
 
     st.session_state["user_id"] = int(user["id"])
-    st.session_state["show_reset_modal"] = False
     st.rerun()
-
-
-def render_reset_modal_overlay() -> None:
-    """
-    Pop-up ludique (Glass Overlay) - fidèle au HTML.
-    Shake detection : quand l'utilisateur secoue le téléphone, déclenche la réinitialisation.
-    Clic à côté / Annuler = pas de reset.
-    """
-    st.markdown(
-        """
-        <div id="penguin-reset-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:rgba(0,52,101,0.3);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
-          <div onclick="event.stopPropagation()" style="background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);border-radius:0.75rem;padding:2rem;max-width:20rem;width:100%;box-shadow:0 32px 64px rgba(0,52,101,0.2);border:1px solid rgba(255,255,255,0.8);text-align:center">
-            <div style="width:96px;height:96px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#003465 0%,#004b8d 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 24px 48px rgba(0,52,101,0.2)">
-              <span class="material-symbols-outlined" style="font-size:48px;color:white">ice_skating</span>
-            </div>
-            <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.5rem;color:#003465;margin-bottom:0.75rem">Tu as tué le pinguin ?</h2>
-            <p style="color:#424750;margin-bottom:2rem;line-height:1.5">Secoue toi pour le ramener sur sa banquise !</p>
-            <a href="?reset_confirm=1" id="penguin-reset-btn" style="display:flex;align-items:center;justify-content:center;gap:0.75rem;width:100%;padding:1rem 1.5rem;background:linear-gradient(135deg,#003465 0%,#004b8d 100%);color:white;font-weight:700;border-radius:9999px;text-decoration:none;border:1px solid rgba(255,255,255,0.2);box-shadow:0 10px 20px rgba(0,52,101,0.3)">
-              <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">vibration</span>
-              Réinitialiser (Secouer)
-            </a>
-            <a href="?cancel=1" style="display:block;margin-top:1rem;color:#424750;font-size:0.875rem;text-decoration:none">Annuler</a>
-          </div>
-        </div>
-        <script>
-        (function(){
-          var overlay = document.getElementById('penguin-reset-overlay');
-          var path = window.location.pathname || '/';
-
-          if (window.DeviceMotionEvent) {
-            var lastShake = 0;
-            window.addEventListener('devicemotion', function(e) {
-              var a = e.accelerationIncludingGravity;
-              var total = Math.abs(a.x||0) + Math.abs(a.y||0) + Math.abs(a.z||0);
-              if (total > 25 && Date.now() - lastShake > 1500) {
-                lastShake = Date.now();
-                window.location.href = path + '?reset_confirm=1';
-              }
-            }, true);
-          }
-
-          overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-              window.location.href = path + '?cancel=1';
-            }
-          });
-        })();
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
 
 
 def render_banquise(user: dict[str, Any]) -> None:
@@ -608,6 +554,11 @@ def render_banquise(user: dict[str, Any]) -> None:
         st.info("🌊 Océan — -2°C Arctique")
     with b2:
         st.warning("⚠️ Danger — Requin & Orque")
+
+    # Bouton fusil : tue les pingouins = compteur à 0
+    if st.button("🔫 Tuer les pingouins (remise à zéro)", type="secondary", use_container_width=True):
+        set_user_days(int(user["id"]), 0)
+        st.rerun()
 
 
 def render_amis(user: dict[str, Any]) -> None:
@@ -668,10 +619,6 @@ def render_profil(user: dict[str, Any], cookie_manager: Any) -> None:
         st.success("Compteur mis a jour.")
         st.rerun()
 
-    if st.button("⚠️ Remettre le compteur a zero", use_container_width=True):
-        st.session_state["show_reset_modal"] = True
-        st.rerun()
-
     c1, c2 = st.columns(2)
     with c1:
         if st.button("🚪 Se deconnecter", use_container_width=True):
@@ -709,23 +656,6 @@ def run_app() -> None:
         if current_user is None:
             logout()
             st.error("Session invalide. Reconnecte-toi.")
-            st.stop()
-
-        user_id = int(current_user["id"])
-
-        if "reset_confirm" in st.query_params:
-            set_user_days(user_id, 0)
-            st.session_state["show_reset_modal"] = False
-            st.query_params.clear()
-            st.rerun()
-
-        if "cancel" in st.query_params:
-            st.session_state["show_reset_modal"] = False
-            st.query_params.clear()
-            st.rerun()
-
-        if st.session_state.get("show_reset_modal", False):
-            render_reset_modal_overlay()
             st.stop()
 
         tab = st.session_state.get("tab", "Banquise")
