@@ -14,6 +14,8 @@ import extra_streamlit_components as stx
 import streamlit as st
 import streamlit.components.v1 as components
 
+IOS_ICON_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f427.png"
+
 st.set_page_config(
     page_title="Penguin",
     page_icon="🐧",
@@ -112,8 +114,7 @@ def inject_css() -> None:
 
 def inject_ios_webapp_meta() -> None:
     """Ajoute des meta tags pour une experience bookmark iOS."""
-    components.html(
-        """
+    html = """
         <script>
         (function() {
           const doc = window.parent.document;
@@ -130,6 +131,7 @@ def inject_ios_webapp_meta() -> None:
           ensureMeta("apple-mobile-web-app-capable", "yes");
           ensureMeta("apple-mobile-web-app-status-bar-style", "black-translucent");
           ensureMeta("apple-mobile-web-app-title", "Penguin");
+          ensureMeta("mobile-web-app-capable", "yes");
           ensureMeta("theme-color", "#003465");
           function ensureLink(rel) {
             let el = head.querySelector(`link[rel="${rel}"]`);
@@ -141,35 +143,18 @@ def inject_ios_webapp_meta() -> None:
             return el;
           }
 
-          // Genere une icone PNG (mieux prise en charge par iOS qu'un SVG).
-          const canvas = doc.createElement("canvas");
-          canvas.width = 180;
-          canvas.height = 180;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            const grad = ctx.createLinearGradient(0, 0, 0, 180);
-            grad.addColorStop(0, "#bde8ff");
-            grad.addColorStop(1, "#003465");
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 180, 180);
-            ctx.fillStyle = "rgba(255,255,255,0.28)";
-            ctx.beginPath();
-            ctx.arc(42, 40, 28, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.font = "102px Apple Color Emoji";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText("🐧", 92, 102);
-            const png = canvas.toDataURL("image/png");
-            const appleIcon = ensureLink("apple-touch-icon");
-            appleIcon.setAttribute("sizes", "180x180");
-            appleIcon.setAttribute("href", png);
-            ensureLink("icon").setAttribute("href", png);
-            ensureLink("shortcut icon").setAttribute("href", png);
-          }
+          // Force une icone pingouin explicite pour eviter l'icone Streamlit par defaut.
+          const iconUrl = "__ICON_URL__";
+          const appleIcon = ensureLink("apple-touch-icon");
+          appleIcon.setAttribute("sizes", "180x180");
+          appleIcon.setAttribute("href", iconUrl);
+          ensureLink("icon").setAttribute("href", iconUrl);
+          ensureLink("shortcut icon").setAttribute("href", iconUrl);
         })();
         </script>
-        """,
+        """
+    components.html(
+        html.replace("__ICON_URL__", IOS_ICON_URL),
         height=0,
         width=0,
     )
@@ -441,6 +426,7 @@ def render_ios_bookmark_help() -> None:
 4. Valide **Ajouter**.
 
 Ensuite l'app se lance en mode web-app plein ecran, comme une mini application.
+Si l'ancienne icone Streamlit reste visible, supprime d'abord l'ancien raccourci puis recree-le.
 """
         )
 
@@ -683,28 +669,6 @@ def render_banquise(user: dict[str, Any]) -> None:
         unsafe_allow_html=True,
     )
     st.caption("Exemple valide: Jour 256 = 1 orque + 2 pingouins + 16 mouettes.")
-
-    st.markdown("### Actions")
-    q1, q2, q3 = st.columns(3)
-    with q1:
-        if st.button("+1", use_container_width=True, type="primary"):
-            add_days(int(user["id"]), 1)
-            st.rerun()
-    with q2:
-        if st.button("+7", use_container_width=True):
-            add_days(int(user["id"]), 7)
-            st.rerun()
-    with q3:
-        if st.button("+30", use_container_width=True):
-            add_days(int(user["id"]), 30)
-            st.rerun()
-
-    with st.form("manual_add"):
-        amount = st.number_input("Ajouter un nombre de jours", min_value=0, value=0, step=1)
-        submit = st.form_submit_button("Ajouter", use_container_width=True)
-    if submit and int(amount) > 0:
-        add_days(int(user["id"]), int(amount))
-        st.rerun()
 
 
 def render_vue(user: dict[str, Any]) -> None:
