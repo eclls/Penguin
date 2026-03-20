@@ -479,35 +479,40 @@ def render_profil(user: dict[str, Any]) -> None:
         st.rerun()
 
 
-inject_css()
-init_database()
-init_session()
+def run_app() -> None:
+    inject_css()
+    init_database()
+    init_session()
 
-if st.session_state["user_id"] is None:
-    auth_screen()
-    st.stop()
+    if st.session_state["user_id"] is None:
+        auth_screen()
+        st.stop()
 
-current_user = get_user_by_id(int(st.session_state["user_id"]))
-if current_user is None:
-    logout()
-    st.error("Session invalide. Reconnecte-toi.")
-    st.stop()
+    current_user = get_user_by_id(int(st.session_state["user_id"]))
+    if current_user is None:
+        logout()
+        st.error("Session invalide. Reconnecte-toi.")
+        st.stop()
 
-if st.session_state.get("show_opening_modal", False):
-    opening_modal(int(current_user["id"]))
+    if st.session_state.get("show_opening_modal", False):
+        opening_modal(int(current_user["id"]))
 
-tab = st.radio(
-    "Navigation",
-    options=["Banquise", "Vue illustree", "Amis", "Profil"],
-    horizontal=True,
-    label_visibility="collapsed",
-)
+    tab = st.radio(
+        "Navigation",
+        options=["Banquise", "Vue illustree", "Amis", "Profil"],
+        horizontal=True,
+        label_visibility="collapsed",
+    )
 
-if tab == "Banquise":
-    render_banquise(current_user)
-elif tab == "Vue illustree":
-    render_vue(current_user)
-elif tab == "Amis":
-    render_amis(current_user)
-else:
-    render_profil(current_user)
+    if tab == "Banquise":
+        render_banquise(current_user)
+    elif tab == "Vue illustree":
+        render_vue(current_user)
+    elif tab == "Amis":
+        render_amis(current_user)
+    else:
+        render_profil(current_user)
+
+
+if __name__ == "__main__":
+    run_app()
