@@ -415,32 +415,38 @@ def _animals_html(
 
 
 def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
-    """Iceberg (Hero Visualization) - fidèle au HTML. J=0 => Dodo..., J>0 => animaux dynamiques."""
+    """
+    Layout inspiré de l'illustration banquise : glace à gauche, océan à droite.
+    Animaux dynamiques selon J : oiseaux (ciel), pingouins (glace), orques/requins (eau).
+    J=0 => banquise vide (Dodo...).
+    """
     days = fauna["days"]
+
+    # Zones inspirées de l'illustration : oiseaux dans le ciel, pingouins sur la glace, orques/requins dans l'eau
     birds_html, birds_hidden = _animals_html(
         "flutter_dash",
         fauna["gulls"],
         "penguin-animal--bird",
         user_id + 11,
-        (8, 92, 8, 39),
+        (15, 85, 5, 28),  # ciel : large, haut
         max_display=90,
-        size="28px",
+        size="26px",
     )
     penguins_html, penguins_hidden = _animals_html(
         "ice_skating",
         fauna["penguins"],
         "penguin-animal--penguin",
         user_id + 29,
-        (20, 80, 53, 77),
+        (8, 42, 45, 88),  # glace gauche : zone gauche, milieu-bas
         max_display=70,
-        size="32px",
+        size="30px",
     )
     orcas_html, orcas_hidden = _animals_html(
         "water_ec",
         fauna["orcas"],
         "penguin-animal--orca",
         user_id + 43,
-        (10, 90, 70, 92),
+        (55, 92, 45, 82),  # eau droite : surface
         max_display=18,
         size="28px",
     )
@@ -449,25 +455,20 @@ def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
         fauna["sharks"],
         "penguin-animal--shark",
         user_id + 67,
-        (12, 88, 78, 96),
+        (58, 95, 72, 95),  # eau droite : plus bas
         max_display=14,
-        size="28px",
+        size="26px",
     )
 
-    # J=0 : The Fallen Penguin (Dodo...). J>0 : animaux dynamiques
     if days == 0:
         inner = """
-        <div class="flex flex-col items-center opacity-40 grayscale">
-          <span class="material-symbols-outlined text-primary" style="font-size: 64px;">ice_skating</span>
-          <span class="text-xs font-bold mt-2">Dodo...</span>
+        <div style="position:absolute;left:15%;top:55%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;opacity:0.5;filter:grayscale(1)">
+          <span class="material-symbols-outlined" style="font-size:56px;color:#003465">ice_skating</span>
+          <span style="font-size:12px;font-weight:700;margin-top:6px;color:#424750">Dodo...</span>
         </div>
         """
     else:
         inner = f"""
-        <div class="absolute top-4 right-10 flex flex-col items-center">
-          <span class="material-symbols-outlined text-on-surface-variant" style="font-size: 32px;">flutter_dash</span>
-          <span class="text-[10px] font-bold uppercase tracking-widest text-secondary mt-1">Mouette</span>
-        </div>
         <div style="position:absolute;inset:0;pointer-events:none">
           {birds_html}
           {penguins_html}
@@ -478,17 +479,20 @@ def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
 
     st.markdown(
         f"""
-        <div class="w-full max-w-md aspect-square relative mb-8">
-          <div class="absolute inset-0 bg-secondary-container/30 rounded-xl overflow-hidden">
-            <div class="absolute bottom-0 w-full h-1/3 bg-primary/10"></div>
-          </div>
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-1/2 bg-white rounded-xl shadow-lg transform -rotate-2 flex flex-col items-center justify-center border border-white/40">
-            <div class="relative w-full h-full flex items-center justify-center">
-              {inner}
-            </div>
-          </div>
-          <div class="absolute top-10 left-10 opacity-20"><span class="material-symbols-outlined" style="font-size: 48px;">water_drop</span></div>
-          <div class="absolute bottom-20 right-4 opacity-10"><span class="material-symbols-outlined" style="font-size: 56px;">sailing</span></div>
+        <div class="penguin-scene-landscape" style="position:relative;width:100%;max-width:28rem;aspect-ratio:4/3;border-radius:1rem;overflow:hidden;margin-bottom:2rem;box-shadow:0 12px 40px rgba(0,52,101,0.15)">
+          <!-- Ciel -->
+          <div style="position:absolute;inset:0 0 60% 0;background:linear-gradient(180deg,#b8d4e8 0%,#d4e8f5 50%,#e8f2f8 100%)"></div>
+          <!-- Montagnes lointaines -->
+          <div style="position:absolute;bottom:25%;left:0;right:0;height:35%;background:linear-gradient(180deg,transparent 0%,rgba(200,220,235,0.6) 40%,rgba(180,200,215,0.5) 100%);clip-path:polygon(0 100%,0 60%,15% 75%,30% 55%,45% 70%,60% 50%,75% 65%,90% 55%,100% 70%,100% 100%)"></div>
+          <!-- Banquise (gauche) : glace blanche/bleutée, bord irrégulier -->
+          <div style="position:absolute;left:0;bottom:0;width:52%;height:55%;background:linear-gradient(180deg,#f0f8ff 0%,#e4f2fa 30%,#d4e8f2 70%,#c8e0ee 100%);clip-path:polygon(0 100%,0 25%,8% 15%,18% 22%,28% 12%,38% 18%,48% 8%,52% 15%,52% 100%);border-right:2px solid rgba(255,255,255,0.8);box-shadow:inset 0 -8px 20px rgba(150,180,200,0.2)"></div>
+          <!-- Océan (droite) : bleu-vert profond -->
+          <div style="position:absolute;right:0;bottom:0;width:52%;height:55%;background:linear-gradient(180deg,#5a9bb8 0%,#3d7a96 40%,#2a5f78 100%);box-shadow:inset 0 4px 20px rgba(0,0,0,0.15)"></div>
+          <!-- Petits blocs de glace flottants -->
+          <div style="position:absolute;right:8%;bottom:35%;width:12%;height:8%;background:rgba(255,255,255,0.7);border-radius:30% 70% 50% 50%;opacity:0.9"></div>
+          <div style="position:absolute;right:25%;bottom:28%;width:8%;height:6%;background:rgba(255,255,255,0.6);border-radius:60% 40% 50% 50%;opacity:0.8"></div>
+          <!-- Animaux dynamiques -->
+          {inner}
         </div>
         """,
         unsafe_allow_html=True,
