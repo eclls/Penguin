@@ -1,53 +1,38 @@
 # Penguin 🐧
 
-Application Streamlit interactive de suivi de progression.
+Application Streamlit **mobile-first** en **mono-fichier** (`app.py`) pour simplifier le deploiement.
 
-## Fonctionnalites principales
+## Fonctionnalites
 
-- Compteur **Jour X** avec conversion stricte :
+- Authentification (creation de compte + connexion).
+- Compteur `Jour X`.
+- Conversion stricte :
   - `1 jour = 1 mouette`
   - `30 mouettes = 1 pingouin`
   - `6 pingouins = 1 orque`
   - `2 orques = 1 requin`
-- Visualisation de la banquise (emoji dynamiques selon la progression).
-- Modale d'ouverture : **"Tu as tue le pinguin ? Secoue toi"** avec reset possible.
-- Authentification : creation de compte + connexion.
-- Social : ajout d'amis et visualisation de leur progression.
-- Ajustement manuel : definition du nombre de jours de depart.
+- Modale d'ouverture : **"Tu as tue le pinguin ? Secoue toi"**.
+- Social : ajout d'amis + progression.
+- Profil : ajustement manuel du compteur.
+- Navigation interne (Banquise / Vue illustree / Amis / Profil) depuis `app.py`.
 
-## Installation locale
+## Lancement local
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-## Lancement
-
-```bash
 streamlit run app.py
 ```
 
+## Deploiement Streamlit
+
+Tu n'as besoin de renseigner que le fichier d'entree : **`app.py`**.
+
 ## Persistance des donnees
 
-Par defaut, l'application utilise SQLite dans `data/penguin.db`.
+Base SQLite par defaut: `data/penguin.db`.
 
-Pour un environnement remote, tu peux definir un chemin custom :
+Chemin custom (remote):
 
 ```bash
 export PENGUIN_DB_PATH=/tmp/penguin.db
 ```
-
-Ou via `st.secrets` (Streamlit Cloud) :
-
-```toml
-penguin_db_path = "/mount/persistent/penguin.db"
-```
-
-## Pages
-
-- `app.py` : connexion/inscription + banquise principale.
-- `pages/1_Vue_Illustree.py` : decomposition visuelle de la progression.
-- `pages/2_Profil.py` : stats utilisateur + ajustement manuel.
-- `pages/3_Amis.py` : gestion des amis et progression sociale.
