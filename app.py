@@ -642,7 +642,7 @@ def render_banquise(user: dict[str, Any]) -> None:
         st.warning("⚠️ Danger — Requin & Orque")
 
     # Bouton fusil : tue les pingouins = compteur à 0
-    if st.button("🔫 Tuer les pingouins (remise à zéro)", type="secondary", use_container_width=True):
+    if st.button("🔫 Kill the penguin (remise à zéro)", type="secondary", use_container_width=True):
         set_user_days(int(user["id"]), 0)
         st.rerun()
 
