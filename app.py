@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 import os
 import sqlite3
 from pathlib import Path
 from typing import Any
 
+import extra_streamlit_components as stx
 import streamlit as st
 
 st.set_page_config(
@@ -124,6 +126,15 @@ def authenticate_user(username: str) -> dict[str, Any] | None:
     return dict(row)
 
 
+def get_user_by_username(username: str) -> dict[str, Any] | None:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
+            (username.strip(),),
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def get_user_by_id(user_id: int) -> dict[str, Any] | None:
     with _connect() as conn:
         row = conn.execute("SELECT * FROM users WHERE id = ?", (int(user_id),)).fetchone()
@@ -231,74 +242,93 @@ def emoji_cloud(emoji: str, count: int, max_display: int = 20) -> str:
     return cloud
 
 
+COOKIE_NAME = "penguin_username"
+
+
+@st.cache_resource
+def get_cookie_manager() -> stx.CookieManager:
+    return stx.CookieManager()
+
+
 def init_session() -> None:
     st.session_state.setdefault("user_id", None)
-    st.session_state.setdefault("show_opening_modal", False)
+    st.session_state.setdefault("show_reset_modal", False)
     st.session_state.setdefault("tab", "Banquise")
 
 
 def logout() -> None:
     st.session_state["user_id"] = None
-    st.session_state["show_opening_modal"] = False
+    st.session_state["show_reset_modal"] = False
 
 
-def auth_screen() -> None:
+def auth_screen(cookie_manager: stx.CookieManager) -> None:
     st.markdown("## 🐧 Penguin")
     st.caption(
-        "Version locale de confiance: connexion par pseudo uniquement (sans mot de passe)."
+        "Version locale de confiance: choisis ton pseudo, et l'app garde ton compte + tes jours en memoire."
     )
-    tab_login, tab_signup = st.tabs(["Connexion", "Creer un compte"])
+    remembered = cookie_manager.get(COOKIE_NAME)
+    if remembered:
+        st.info(f"Pseudo memorise sur cet appareil: **{remembered}**")
 
-    with tab_login:
-        with st.form("login_form", clear_on_submit=False):
-            username = st.text_input("Nom d'utilisateur")
-            submit = st.form_submit_button("Entrer", use_container_width=True, type="primary")
-        if submit:
-            user = authenticate_user(username)
-            if user is None:
-                st.error("Pseudo introuvable. Cree un compte.")
-            else:
-                st.session_state["user_id"] = int(user["id"])
-                st.session_state["show_opening_modal"] = True
-                st.rerun()
+    with st.form("choose_username_form", clear_on_submit=False):
+        username = st.text_input("Choisir mon pseudo")
+        starting_days = st.number_input(
+            "Jours de depart (si nouveau pseudo)",
+            min_value=0,
+            value=0,
+            step=1,
+            help="Utilise uniquement si ce pseudo n'existe pas encore.",
+        )
+        remember_me = st.checkbox("Se souvenir de mon pseudo sur cet appareil", value=True)
+        submit = st.form_submit_button("Continuer", use_container_width=True, type="primary")
 
-    with tab_signup:
-        with st.form("signup_form", clear_on_submit=False):
-            username = st.text_input("Nom d'utilisateur", key="signup_name")
-            starting_days = st.number_input(
-                "Ajouter un nombre de jours (initialisation)",
-                min_value=0,
-                value=0,
-                step=1,
-            )
-            submit = st.form_submit_button("Creer le compte", use_container_width=True)
-        if submit:
-            ok, message = register_user(username, int(starting_days))
-            if not ok:
-                st.error(message)
-                return
-            user = authenticate_user(username)
-            if user is None:
-                st.error("Echec de connexion apres creation.")
-                return
-            st.session_state["user_id"] = int(user["id"])
-            st.session_state["show_opening_modal"] = True
-            st.success(message)
-            st.rerun()
+    if not submit:
+        return
+
+    clean_username = username.strip()
+    if len(clean_username) < 3:
+        st.error("Le pseudo doit contenir au moins 3 caracteres.")
+        return
+
+    user = get_user_by_username(clean_username)
+    if user is None:
+        ok, message = register_user(clean_username, int(starting_days))
+        if not ok:
+            st.error(message)
+            return
+        st.success(message)
+        user = get_user_by_username(clean_username)
+
+    if user is None:
+        st.error("Impossible de charger le compte.")
+        return
+
+    if remember_me:
+        cookie_manager.set(
+            COOKIE_NAME,
+            str(user["username"]),
+            expires_at=datetime.now() + timedelta(days=365),
+        )
+    else:
+        cookie_manager.delete(COOKIE_NAME)
+
+    st.session_state["user_id"] = int(user["id"])
+    st.session_state["show_reset_modal"] = False
+    st.rerun()
 
 
 def opening_modal(user_id: int) -> None:
     @st.dialog("Tu as tue le pinguin ? Secoue toi")
     def _dialog() -> None:
-        st.write("Action A: reset apres secousse. Action B: continuer sans reset.")
+        st.write("Action A: reset apres secousse. Action B: annuler.")
         st.info("Sur smartphone, secoue puis confirme avec le bouton reset.")
         if st.button("📳 J'ai secoue: reset", type="primary", use_container_width=True):
             set_user_days(user_id, 0)
-            st.session_state["show_opening_modal"] = False
+            st.session_state["show_reset_modal"] = False
             st.success("Compteur remis a zero.")
             st.rerun()
-        if st.button("Continuer", use_container_width=True):
-            st.session_state["show_opening_modal"] = False
+        if st.button("Annuler", use_container_width=True):
+            st.session_state["show_reset_modal"] = False
             st.rerun()
 
     _dialog()
@@ -415,7 +445,7 @@ def render_amis(user: dict[str, Any]) -> None:
                     st.rerun()
 
 
-def render_profil(user: dict[str, Any]) -> None:
+def render_profil(user: dict[str, Any], cookie_manager: stx.CookieManager) -> None:
     days = int(user["days"])
     fauna = breakdown_days(days)
     friend_count = len(list_friend_progress(int(user["id"])))
@@ -433,18 +463,37 @@ def render_profil(user: dict[str, Any]) -> None:
         st.success("Compteur mis a jour.")
         st.rerun()
 
-    if st.button("🚪 Se deconnecter", use_container_width=True):
-        logout()
+    if st.button("⚠️ Remettre le compteur a zero", use_container_width=True):
+        st.session_state["show_reset_modal"] = True
         st.rerun()
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("🚪 Se deconnecter", use_container_width=True):
+            logout()
+            st.rerun()
+    with c2:
+        if st.button("🧹 Oublier ce pseudo", use_container_width=True):
+            cookie_manager.delete(COOKIE_NAME)
+            logout()
+            st.rerun()
 
 
 def run_app() -> None:
     inject_css()
     init_database()
     init_session()
+    cookie_manager = get_cookie_manager()
 
     if st.session_state["user_id"] is None:
-        auth_screen()
+        remembered = cookie_manager.get(COOKIE_NAME)
+        if remembered:
+            remembered_user = get_user_by_username(remembered)
+            if remembered_user is not None:
+                st.session_state["user_id"] = int(remembered_user["id"])
+
+    if st.session_state["user_id"] is None:
+        auth_screen(cookie_manager)
         st.stop()
 
     current_user = get_user_by_id(int(st.session_state["user_id"]))
@@ -453,7 +502,7 @@ def run_app() -> None:
         st.error("Session invalide. Reconnecte-toi.")
         st.stop()
 
-    if st.session_state.get("show_opening_modal", False):
+    if st.session_state.get("show_reset_modal", False):
         opening_modal(int(current_user["id"]))
 
     tab = st.radio(
@@ -470,7 +519,7 @@ def run_app() -> None:
     elif tab == "Amis":
         render_amis(current_user)
     else:
-        render_profil(current_user)
+        render_profil(current_user, cookie_manager)
 
 
 if __name__ == "__main__":

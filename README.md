@@ -5,6 +5,7 @@ Application Streamlit **mobile-first** en **mono-fichier** (`app.py`) pour simpl
 ## Fonctionnalites
 
 - Authentification locale simple par pseudo (sans mot de passe).
+- Memoire de compte sur l'appareil (pseudo memorise localement).
 - Compteur `Jour X`.
 - Conversion stricte :
   - `1 jour = 1 mouette`
@@ -30,6 +31,7 @@ Tu n'as besoin de renseigner que le fichier d'entree : **`app.py`**.
 ## Persistance des donnees
 
 Base SQLite par defaut: `data/penguin.db`.
+Les comptes et le nombre de jours sont enregistres dans cette base (donc conserves entre redemarrages).
 
 Chemin custom (remote):
 
