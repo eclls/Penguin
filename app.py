@@ -28,7 +28,6 @@ def inject_css() -> None:
     """CSS minimal, sans Tailwind ni dépendances externes."""
     st.markdown(
         """
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
       .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
       .stApp { background: #f6fafe !important; }
@@ -36,10 +35,6 @@ def inject_css() -> None:
       [data-testid="stSidebar"] { display: none; }
       #MainMenu, footer, .stDeployButton { visibility: hidden; }
       .penguin-animal { position: absolute; transform: translate(-50%,-50%); line-height: 1; user-select: none; }
-      .penguin-animal--bird .material-symbols-outlined { color: #326578; }
-      .penguin-animal--penguin .material-symbols-outlined { color: #003465; }
-      .penguin-animal--orca .material-symbols-outlined { color: #1e3a5f; }
-      .penguin-animal--shark .material-symbols-outlined { color: #ba1a1a; }
       .penguin-error-card { background: #ffebee; border: 1px solid #ef9a9a; border-radius: 0.5rem; padding: 0.8rem; margin-bottom: 0.8rem; }
     </style>
     """,
@@ -381,7 +376,7 @@ def _animals_html(
         parts.append(
             f'<span class="penguin-animal {css_class}" '
             f'style="left:{x:.2f}%; top:{(y + wobble):.2f}%; font-size:{size}">'
-            f'<span class="ms material-symbols-outlined">{symbol}</span></span>'
+            f'{symbol}</span>'
         )
     hidden = max(count - shown, 0)
     return "".join(parts), hidden
@@ -389,38 +384,39 @@ def _animals_html(
 
 def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
     """
-    Scène banquise : glace à gauche, eau à droite. Animaux dynamiques selon J.
+    Scène banquise : banquise ronde au centre, eau autour. Animaux en emojis Apple.
     J=0 => Dodo...
     """
     days = fauna["days"]
 
+    # Emojis Apple : oiseaux, pingouins, orques, requins
     birds_html, birds_hidden = _animals_html(
-        "flutter_dash", fauna["gulls"], "penguin-animal--bird", user_id + 11,
-        (10, 90, 5, 30), 90, "24px",
+        "🐦", fauna["gulls"], "penguin-animal--bird", user_id + 11,
+        (8, 92, 5, 35), 90, "22px",
     )
     penguins_html, penguins_hidden = _animals_html(
-        "ice_skating", fauna["penguins"], "penguin-animal--penguin", user_id + 29,
-        (10, 45, 45, 90), 70, "28px",
+        "🐧", fauna["penguins"], "penguin-animal--penguin", user_id + 29,
+        (30, 70, 50, 82), 70, "26px",
     )
     orcas_html, orcas_hidden = _animals_html(
-        "water_ec", fauna["orcas"], "penguin-animal--orca", user_id + 43,
-        (55, 90, 50, 85), 18, "26px",
+        "🐋", fauna["orcas"], "penguin-animal--orca", user_id + 43,
+        (15, 85, 68, 92), 18, "24px",
     )
     sharks_html, sharks_hidden = _animals_html(
-        "sailing", fauna["sharks"], "penguin-animal--shark", user_id + 67,
-        (60, 92, 75, 92), 14, "24px",
+        "🦈", fauna["sharks"], "penguin-animal--shark", user_id + 67,
+        (12, 88, 75, 95), 14, "22px",
     )
 
     if days == 0:
-        inner = '<div style="position:absolute;left:22%;top:65%;transform:translate(-50%,-50%);text-align:center;opacity:0.6"><span class="material-symbols-outlined" style="font-size:48px;color:#003465">ice_skating</span><div style="font-size:11px;font-weight:700;color:#555">Dodo...</div></div>'
+        inner = '<div style="position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);text-align:center;opacity:0.6"><span style="font-size:48px">🐧</span><div style="font-size:11px;font-weight:700;color:#555">Dodo...</div></div>'
     else:
         inner = f'<div style="position:absolute;inset:0">{birds_html}{penguins_html}{orcas_html}{sharks_html}</div>'
 
     st.markdown(
         f"""
-        <div style="position:relative;width:100%;height:220px;border-radius:12px;overflow:hidden;margin:1rem 0;border:1px solid #c8dce8">
-          <div style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(180deg,#e8f4fa 0%,#d0e8f2 100%)"></div>
-          <div style="position:absolute;right:0;top:0;bottom:0;width:50%;background:linear-gradient(180deg,#4a8ba8 0%,#2d6a82 100%)"></div>
+        <div style="position:relative;width:100%;height:240px;border-radius:12px;overflow:hidden;margin:1rem 0;border:1px solid #c8dce8">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,#9eddff 0%,#dff5ff 40%,#5a9bb8 40%,#2d6a82 100%)"></div>
+          <div style="position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);width:55%;height:45%;background:linear-gradient(180deg,#fff 0%,#e8f4fa 80%);border-radius:50%;box-shadow:inset 0 -8px 20px rgba(100,150,180,0.15);border:1px solid rgba(255,255,255,0.9)"></div>
           {inner}
         </div>
         """,
