@@ -25,49 +25,22 @@ st.set_page_config(
 
 
 def inject_css() -> None:
-    """Inject Tailwind, fonts, Material Symbols et styles fidèles au HTML fourni."""
+    """CSS minimal, sans Tailwind ni dépendances externes."""
     st.markdown(
         """
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              "primary": "#003465",
-              "primary-container": "#004b8d",
-              "secondary": "#326578",
-              "background": "#f6fafe",
-              "surface-container-low": "#f0f4f8",
-              "surface-container-highest": "#dfe3e7",
-              "on-surface": "#171c1f",
-              "on-surface-variant": "#424750",
-              "error": "#ba1a1a",
-              "secondary-container": "#b5e7fe"
-            },
-            fontFamily: { "headline": ["Plus Jakarta Sans"], "body": ["Be Vietnam Pro"] },
-            borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }
-          }
-        }
-      }
-    </script>
     <style>
       .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-      body, .stApp { font-family: 'Be Vietnam Pro', sans-serif; background: #f6fafe !important; }
-      .block-container { max-width: 28rem; padding: 0 1.5rem 8rem; padding-top: 6rem; }
+      .stApp { background: #f6fafe !important; }
+      .block-container { max-width: 420px; padding: 1rem; padding-bottom: 6rem; }
       [data-testid="stSidebar"] { display: none; }
       #MainMenu, footer, .stDeployButton { visibility: hidden; }
-      .arctic-gradient { background: linear-gradient(135deg, #003465 0%, #004b8d 100%); }
-      .snow-glow { box-shadow: 0 24px 48px rgba(0, 52, 101, 0.06); }
-      .glass-panel { background: rgba(255,255,255,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
       .penguin-animal { position: absolute; transform: translate(-50%,-50%); line-height: 1; user-select: none; }
       .penguin-animal--bird .material-symbols-outlined { color: #326578; }
       .penguin-animal--penguin .material-symbols-outlined { color: #003465; }
       .penguin-animal--orca .material-symbols-outlined { color: #1e3a5f; }
       .penguin-animal--shark .material-symbols-outlined { color: #ba1a1a; }
-      .penguin-error-card { background: rgba(255,237,237,0.96); border: 1px solid rgba(186,26,26,0.25); border-radius: 0.9rem; padding: 0.8rem; margin-bottom: 0.8rem; }
+      .penguin-error-card { background: #ffebee; border: 1px solid #ef9a9a; border-radius: 0.5rem; padding: 0.8rem; margin-bottom: 0.8rem; }
     </style>
     """,
         unsafe_allow_html=True,
@@ -416,82 +389,38 @@ def _animals_html(
 
 def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
     """
-    Layout inspiré de l'illustration banquise : glace à gauche, océan à droite.
-    Animaux dynamiques selon J : oiseaux (ciel), pingouins (glace), orques/requins (eau).
-    J=0 => banquise vide (Dodo...).
+    Scène banquise : glace à gauche, eau à droite. Animaux dynamiques selon J.
+    J=0 => Dodo...
     """
     days = fauna["days"]
 
-    # Zones inspirées de l'illustration : oiseaux dans le ciel, pingouins sur la glace, orques/requins dans l'eau
     birds_html, birds_hidden = _animals_html(
-        "flutter_dash",
-        fauna["gulls"],
-        "penguin-animal--bird",
-        user_id + 11,
-        (15, 85, 5, 28),  # ciel : large, haut
-        max_display=90,
-        size="26px",
+        "flutter_dash", fauna["gulls"], "penguin-animal--bird", user_id + 11,
+        (10, 90, 5, 30), 90, "24px",
     )
     penguins_html, penguins_hidden = _animals_html(
-        "ice_skating",
-        fauna["penguins"],
-        "penguin-animal--penguin",
-        user_id + 29,
-        (8, 42, 45, 88),  # glace gauche : zone gauche, milieu-bas
-        max_display=70,
-        size="30px",
+        "ice_skating", fauna["penguins"], "penguin-animal--penguin", user_id + 29,
+        (10, 45, 45, 90), 70, "28px",
     )
     orcas_html, orcas_hidden = _animals_html(
-        "water_ec",
-        fauna["orcas"],
-        "penguin-animal--orca",
-        user_id + 43,
-        (55, 92, 45, 82),  # eau droite : surface
-        max_display=18,
-        size="28px",
+        "water_ec", fauna["orcas"], "penguin-animal--orca", user_id + 43,
+        (55, 90, 50, 85), 18, "26px",
     )
     sharks_html, sharks_hidden = _animals_html(
-        "sailing",
-        fauna["sharks"],
-        "penguin-animal--shark",
-        user_id + 67,
-        (58, 95, 72, 95),  # eau droite : plus bas
-        max_display=14,
-        size="26px",
+        "sailing", fauna["sharks"], "penguin-animal--shark", user_id + 67,
+        (60, 92, 75, 92), 14, "24px",
     )
 
     if days == 0:
-        inner = """
-        <div style="position:absolute;left:15%;top:55%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;opacity:0.5;filter:grayscale(1)">
-          <span class="material-symbols-outlined" style="font-size:56px;color:#003465">ice_skating</span>
-          <span style="font-size:12px;font-weight:700;margin-top:6px;color:#424750">Dodo...</span>
-        </div>
-        """
+        inner = '<div style="position:absolute;left:22%;top:65%;transform:translate(-50%,-50%);text-align:center;opacity:0.6"><span class="material-symbols-outlined" style="font-size:48px;color:#003465">ice_skating</span><div style="font-size:11px;font-weight:700;color:#555">Dodo...</div></div>'
     else:
-        inner = f"""
-        <div style="position:absolute;inset:0;pointer-events:none">
-          {birds_html}
-          {penguins_html}
-          {orcas_html}
-          {sharks_html}
-        </div>
-        """
+        inner = f'<div style="position:absolute;inset:0">{birds_html}{penguins_html}{orcas_html}{sharks_html}</div>'
 
     st.markdown(
         f"""
-        <div class="penguin-scene-landscape" style="position:relative;width:100%;max-width:28rem;aspect-ratio:4/3;border-radius:1rem;overflow:hidden;margin-bottom:2rem;box-shadow:0 12px 40px rgba(0,52,101,0.15)">
-          <!-- Ciel -->
-          <div style="position:absolute;inset:0 0 60% 0;background:linear-gradient(180deg,#b8d4e8 0%,#d4e8f5 50%,#e8f2f8 100%)"></div>
-          <!-- Montagnes lointaines -->
-          <div style="position:absolute;bottom:25%;left:0;right:0;height:35%;background:linear-gradient(180deg,transparent 0%,rgba(200,220,235,0.6) 40%,rgba(180,200,215,0.5) 100%);clip-path:polygon(0 100%,0 60%,15% 75%,30% 55%,45% 70%,60% 50%,75% 65%,90% 55%,100% 70%,100% 100%)"></div>
-          <!-- Banquise (gauche) : glace blanche/bleutée, bord irrégulier -->
-          <div style="position:absolute;left:0;bottom:0;width:52%;height:55%;background:linear-gradient(180deg,#f0f8ff 0%,#e4f2fa 30%,#d4e8f2 70%,#c8e0ee 100%);clip-path:polygon(0 100%,0 25%,8% 15%,18% 22%,28% 12%,38% 18%,48% 8%,52% 15%,52% 100%);border-right:2px solid rgba(255,255,255,0.8);box-shadow:inset 0 -8px 20px rgba(150,180,200,0.2)"></div>
-          <!-- Océan (droite) : bleu-vert profond -->
-          <div style="position:absolute;right:0;bottom:0;width:52%;height:55%;background:linear-gradient(180deg,#5a9bb8 0%,#3d7a96 40%,#2a5f78 100%);box-shadow:inset 0 4px 20px rgba(0,0,0,0.15)"></div>
-          <!-- Petits blocs de glace flottants -->
-          <div style="position:absolute;right:8%;bottom:35%;width:12%;height:8%;background:rgba(255,255,255,0.7);border-radius:30% 70% 50% 50%;opacity:0.9"></div>
-          <div style="position:absolute;right:25%;bottom:28%;width:8%;height:6%;background:rgba(255,255,255,0.6);border-radius:60% 40% 50% 50%;opacity:0.8"></div>
-          <!-- Animaux dynamiques -->
+        <div style="position:relative;width:100%;height:220px;border-radius:12px;overflow:hidden;margin:1rem 0;border:1px solid #c8dce8">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(180deg,#e8f4fa 0%,#d0e8f2 100%)"></div>
+          <div style="position:absolute;right:0;top:0;bottom:0;width:50%;background:linear-gradient(180deg,#4a8ba8 0%,#2d6a82 100%)"></div>
           {inner}
         </div>
         """,
@@ -508,7 +437,7 @@ def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
     if sharks_hidden:
         chips.append(f"Requins +{sharks_hidden}")
     if chips:
-        st.caption("Animaux supplementaires hors ecran : " + " • ".join(chips))
+        st.caption("Hors écran : " + " • ".join(chips))
 
 
 def init_session() -> None:
@@ -654,100 +583,31 @@ def render_reset_modal_overlay() -> None:
     )
 
 
-def render_header(user: dict[str, Any]) -> None:
-    """TopAppBar fidèle au HTML : logo, Jour X, avatar."""
-    days = int(user["days"])
-    st.markdown(
-        f"""
-        <header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl shadow-[0px_24px_48px_rgba(0,52,101,0.06)]">
-          <div class="flex justify-between items-center px-6 h-16 w-full">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary" style="font-size: 28px;">ice_skating</span>
-              <span class="font-headline font-black text-2xl tracking-tight text-primary">Penguin</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <span class="font-headline font-bold text-lg text-primary bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Jour {days}</span>
-              <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">person</span>
-              </div>
-            </div>
-          </div>
-        </header>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def render_stats_card(fauna: dict[str, int]) -> None:
-    """Conversion Legend / Wildlife Stats Card - fidèle au HTML."""
-    st.markdown(
-        f"""
-        <div class="w-full max-w-md bg-white/40 border border-white/60 p-4 rounded-lg mb-6 backdrop-blur-sm grid grid-cols-4 gap-2 text-center">
-          <div class="flex flex-col items-center">
-            <span class="material-symbols-outlined text-secondary text-xl">flutter_dash</span>
-            <span class="text-[10px] font-bold mt-1">{fauna["gulls"]}</span>
-            <span class="text-[8px] uppercase text-on-surface-variant">Mouettes</span>
-          </div>
-          <div class="flex flex-col items-center border-l border-white/60">
-            <span class="material-symbols-outlined text-primary text-xl">ice_skating</span>
-            <span class="text-[10px] font-bold mt-1">{fauna["penguins"]}</span>
-            <span class="text-[8px] uppercase text-on-surface-variant">Penguin</span>
-          </div>
-          <div class="flex flex-col items-center border-l border-white/60">
-            <span class="material-symbols-outlined text-blue-800 text-xl">water_ec</span>
-            <span class="text-[10px] font-bold mt-1">{fauna["orcas"]}</span>
-            <span class="text-[8px] uppercase text-on-surface-variant">Orque</span>
-          </div>
-          <div class="flex flex-col items-center border-l border-white/60">
-            <span class="material-symbols-outlined text-error text-xl">sailing</span>
-            <span class="text-[10px] font-bold mt-1">{fauna["sharks"]}</span>
-            <span class="text-[8px] uppercase text-on-surface-variant">Requin</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def render_bento_grid() -> None:
-    """Bento Grid Info Section - Océan, Danger."""
-    st.markdown(
-        """
-        <div class="grid grid-cols-2 gap-4 w-full max-w-md">
-          <div class="bg-surface-container-low p-5 rounded-lg flex flex-col gap-2">
-            <span class="material-symbols-outlined text-secondary">waves</span>
-            <span class="font-headline font-bold text-on-surface">Océan</span>
-            <span class="text-xs text-on-surface-variant">-2°C Arctique</span>
-          </div>
-          <div class="bg-surface-container-low p-5 rounded-lg flex flex-col gap-2">
-            <span class="material-symbols-outlined text-amber-800">warning</span>
-            <span class="font-headline font-bold text-on-surface">Danger</span>
-            <span class="text-xs text-on-surface-variant">Requin & Orque</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def render_banquise(user: dict[str, Any]) -> None:
-    """Vue Banquise : structure fidèle au HTML fourni."""
+    """Vue Banquise : layout simple et fonctionnel."""
     days = int(user["days"])
     fauna = breakdown_days(days)
 
-    render_header(user)
-    st.markdown(
-        """
-        <main class="flex-grow pt-24 pb-32 px-6 flex flex-col items-center justify-start relative overflow-hidden">
-          <div class="absolute top-40 -left-20 w-64 h-64 bg-surface-container-low rounded-xl rotate-12 -z-10" style="position:absolute;top:10rem;left:-5rem;width:16rem;height:16rem;background:#f0f4f8;border-radius:0.75rem;transform:rotate(12deg);z-index:-1"></div>
-          <div class="absolute bottom-60 -right-20 w-80 h-80 bg-surface-container-highest rounded-xl -rotate-6 -z-10" style="position:absolute;bottom:15rem;right:-5rem;width:20rem;height:20rem;background:#dfe3e7;border-radius:0.75rem;transform:rotate(-6deg);z-index:-1"></div>
-        """,
-        unsafe_allow_html=True,
-    )
-    render_stats_card(fauna)
+    # Header simple : titre + Jour
+    st.markdown(f"## 🐧 Penguin — Jour {days}")
+    st.caption(f"Salut {user['username']} 👋")
+
+    # Stats : Streamlit natif
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Mouettes", fauna["gulls"])
+    c2.metric("Pingouins", fauna["penguins"])
+    c3.metric("Orques", fauna["orcas"])
+    c4.metric("Requins", fauna["sharks"])
+
+    # Scène banquise
     render_banquise_scene(int(user["id"]), fauna)
-    render_bento_grid()
-    st.markdown("</main>", unsafe_allow_html=True)
+
+    # Bento : Streamlit natif
+    b1, b2 = st.columns(2)
+    with b1:
+        st.info("🌊 Océan — -2°C Arctique")
+    with b2:
+        st.warning("⚠️ Danger — Requin & Orque")
 
 
 def render_amis(user: dict[str, Any]) -> None:
@@ -864,20 +724,11 @@ def run_app() -> None:
             st.query_params.clear()
             st.rerun()
 
-        if "tab" in st.query_params:
-            t = st.query_params.get("tab", "Banquise")
-            if t in ("Banquise", "Amis", "Profil"):
-                st.session_state["tab"] = t
-            st.query_params.clear()
-            st.rerun()
-
         if st.session_state.get("show_reset_modal", False):
             render_reset_modal_overlay()
             st.stop()
 
         tab = st.session_state.get("tab", "Banquise")
-
-        render_header(current_user)
 
         if tab == "Banquise":
             render_banquise(current_user)
@@ -886,25 +737,20 @@ def run_app() -> None:
         else:
             render_profil(current_user, cookie_manager)
 
-        st.markdown(
-            f"""
-            <nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 backdrop-blur-xl shadow-[0px_-12px_32px_rgba(0,52,101,0.04)] rounded-t-[2rem] z-50" style="position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;padding:0.75rem 1rem 1.5rem;background:rgba(255,255,255,0.8);backdrop-filter:blur(24px);box-shadow:0 -12px 32px rgba(0,52,101,0.04);border-radius:2rem 2rem 0 0;z-index:50">
-              <a href="?tab=Banquise" style="display:flex;flex-direction:column;align-items:center;padding:0.5rem 1.25rem;border-radius:9999px;text-decoration:none;color:{"#003465" if tab == "Banquise" else "#64748b"};background:{"#003465" if tab == "Banquise" else "transparent"};color:{"white" if tab == "Banquise" else "#64748b"}">
-                <span class="material-symbols-outlined" style="font-size:24px">home</span>
-                <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px">Banquise</span>
-              </a>
-              <a href="?tab=Amis" style="display:flex;flex-direction:column;align-items:center;padding:0.5rem 1.25rem;border-radius:9999px;text-decoration:none;color:{"#003465" if tab == "Amis" else "#64748b"};background:{"#003465" if tab == "Amis" else "transparent"};color:{"white" if tab == "Amis" else "#64748b"}">
-                <span class="material-symbols-outlined" style="font-size:24px">group</span>
-                <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px">Amis</span>
-              </a>
-              <a href="?tab=Profil" style="display:flex;flex-direction:column;align-items:center;padding:0.5rem 1.25rem;border-radius:9999px;text-decoration:none;color:{"#003465" if tab == "Profil" else "#64748b"};background:{"#003465" if tab == "Profil" else "transparent"};color:{"white" if tab == "Profil" else "#64748b"}">
-                <span class="material-symbols-outlined" style="font-size:24px">person</span>
-                <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px">Profil</span>
-              </a>
-            </nav>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.divider()
+        nc1, nc2, nc3 = st.columns(3)
+        with nc1:
+            if st.button("🏠 Banquise", type="primary" if tab == "Banquise" else "secondary", use_container_width=True, key="nav_banquise"):
+                st.session_state["tab"] = "Banquise"
+                st.rerun()
+        with nc2:
+            if st.button("👥 Amis", type="primary" if tab == "Amis" else "secondary", use_container_width=True, key="nav_amis"):
+                st.session_state["tab"] = "Amis"
+                st.rerun()
+        with nc3:
+            if st.button("👤 Profil", type="primary" if tab == "Profil" else "secondary", use_container_width=True, key="nav_profil"):
+                st.session_state["tab"] = "Profil"
+                st.rerun()
     except Exception:
         details = traceback.format_exc()
         set_persistent_error(
