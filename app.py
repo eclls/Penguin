@@ -6,7 +6,9 @@ from datetime import datetime, timedelta
 import math
 import os
 import sqlite3
+import time
 import traceback
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +17,9 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 IOS_ICON_URL = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f427.png"
+SQLITE_TIMEOUT_SECONDS = 10.0
+SQLITE_RETRY_ATTEMPTS = 5
+SQLITE_RETRY_BASE_DELAY_SECONDS = 0.05
 
 st.set_page_config(
     page_title="Penguin",
@@ -99,20 +104,56 @@ def _db_path() -> Path:
     return db_path
 
 
+def normalize_username(username: str) -> str:
+    """Cree une cle de comparaison robuste (accents/casse/espaces)."""
+    normalized = unicodedata.normalize("NFKC", username or "").strip()
+    return normalized.casefold()
+
+
+def _is_db_lock_error(exc: sqlite3.OperationalError) -> bool:
+    message = str(exc).lower()
+    return "database is locked" in message or "database is busy" in message or "locked" in message
+
+
+def _with_write_retry(operation: Any) -> Any:
+    """Reessaie les ecritures SQLite en cas de contention inter-utilisateurs."""
+    for attempt in range(SQLITE_RETRY_ATTEMPTS):
+        try:
+            with _connect() as conn:
+                return operation(conn)
+        except sqlite3.OperationalError as exc:
+            if not _is_db_lock_error(exc) or attempt == SQLITE_RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(SQLITE_RETRY_BASE_DELAY_SECONDS * (2**attempt))
+    raise RuntimeError("Echec inattendu de l'ecriture SQLite.")
+
+
 def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(_db_path(), check_same_thread=False)
+    conn = sqlite3.connect(
+        _db_path(),
+        check_same_thread=False,
+        timeout=SQLITE_TIMEOUT_SECONDS,
+    )
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute(f"PRAGMA busy_timeout = {int(SQLITE_TIMEOUT_SECONDS * 1000)};")
+    conn.execute("PRAGMA synchronous = NORMAL;")
+    try:
+        conn.execute("PRAGMA journal_mode = WAL;")
+    except sqlite3.DatabaseError:
+        # Certains environnements ne supportent pas WAL.
+        pass
     return conn
 
 
 def init_database() -> None:
-    with _connect() as conn:
+    def _op(conn: sqlite3.Connection) -> None:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+              username_norm TEXT,
               password_hash TEXT NOT NULL,
               days INTEGER NOT NULL DEFAULT 0 CHECK(days >= 0),
               created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -132,42 +173,77 @@ def init_database() -> None:
             );
             """
         )
+        # Migration progressive pour les bases deja creees.
+        user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+        if "username_norm" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN username_norm TEXT;")
+        rows = conn.execute("SELECT id, username, username_norm FROM users").fetchall()
+        for row in rows:
+            current_norm = (row["username_norm"] or "").strip()
+            if current_norm:
+                continue
+            conn.execute(
+                "UPDATE users SET username_norm = ? WHERE id = ?",
+                (normalize_username(str(row["username"])), int(row["id"])),
+            )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username_norm ON users(username_norm);")
+
+    _with_write_retry(_op)
 
 
 def register_user(username: str, starting_days: int = 0) -> tuple[bool, str]:
     clean_username = username.strip()
+    username_norm = normalize_username(clean_username)
     if len(clean_username) < 3:
         return False, "Le nom d'utilisateur doit contenir au moins 3 caracteres."
     if starting_days < 0:
         return False, "Le nombre de jours ne peut pas etre negatif."
+    if not username_norm:
+        return False, "Le pseudo est invalide."
 
     try:
-        with _connect() as conn:
+        def _op(conn: sqlite3.Connection) -> None:
+            existing = conn.execute(
+                """
+                SELECT 1
+                FROM users
+                WHERE username_norm = ?
+                   OR username = ? COLLATE NOCASE
+                LIMIT 1
+                """,
+                (username_norm, clean_username),
+            ).fetchone()
+            if existing is not None:
+                raise sqlite3.IntegrityError("username exists")
             conn.execute(
-                "INSERT INTO users (username, password_hash, days) VALUES (?, ?, ?)",
-                (clean_username, "local-trust-no-password", int(starting_days)),
+                "INSERT INTO users (username, username_norm, password_hash, days) VALUES (?, ?, ?, ?)",
+                (clean_username, username_norm, "local-trust-no-password", int(starting_days)),
             )
+
+        _with_write_retry(_op)
     except sqlite3.IntegrityError:
         return False, "Ce nom d'utilisateur existe deja."
     return True, "Compte cree avec succes."
 
 
 def authenticate_user(username: str) -> dict[str, Any] | None:
-    with _connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
-            (username.strip(),),
-        ).fetchone()
-    if row is None:
-        return None
-    return dict(row)
+    return get_user_by_username(username)
 
 
 def get_user_by_username(username: str) -> dict[str, Any] | None:
+    clean_username = username.strip()
+    username_norm = normalize_username(clean_username)
     with _connect() as conn:
         row = conn.execute(
-            "SELECT * FROM users WHERE username = ? COLLATE NOCASE",
-            (username.strip(),),
+            """
+            SELECT *
+            FROM users
+            WHERE username_norm = ?
+               OR username = ? COLLATE NOCASE
+            ORDER BY CASE WHEN username_norm = ? THEN 0 ELSE 1 END, id ASC
+            LIMIT 1
+            """,
+            (username_norm, clean_username, username_norm),
         ).fetchone()
     return dict(row) if row else None
 
@@ -179,16 +255,20 @@ def get_user_by_id(user_id: int) -> dict[str, Any] | None:
 
 
 def set_user_days(user_id: int, days: int) -> None:
-    with _connect() as conn:
+    def _op(conn: sqlite3.Connection) -> None:
         conn.execute("UPDATE users SET days = ? WHERE id = ?", (max(0, int(days)), int(user_id)))
+
+    _with_write_retry(_op)
 
 
 def add_days(user_id: int, delta: int) -> None:
-    with _connect() as conn:
+    def _op(conn: sqlite3.Connection) -> None:
         conn.execute(
             "UPDATE users SET days = MAX(0, days + ?) WHERE id = ?",
             (int(delta), int(user_id)),
         )
+
+    _with_write_retry(_op)
 
 
 def breakdown_days(days: int) -> dict[str, int]:
@@ -212,11 +292,19 @@ def add_friend_by_username(user_id: int, friend_username: str) -> tuple[bool, st
     clean_username = friend_username.strip()
     if not clean_username:
         return False, "Entre un nom d'utilisateur."
+    friend_username_norm = normalize_username(clean_username)
 
-    with _connect() as conn:
+    def _op(conn: sqlite3.Connection) -> tuple[bool, str]:
         target = conn.execute(
-            "SELECT id FROM users WHERE username = ? COLLATE NOCASE",
-            (clean_username,),
+            """
+            SELECT id
+            FROM users
+            WHERE username_norm = ?
+               OR username = ? COLLATE NOCASE
+            ORDER BY CASE WHEN username_norm = ? THEN 0 ELSE 1 END, id ASC
+            LIMIT 1
+            """,
+            (friend_username_norm, clean_username, friend_username_norm),
         ).fetchone()
         if target is None:
             return False, "Utilisateur introuvable."
@@ -230,9 +318,11 @@ def add_friend_by_username(user_id: int, friend_username: str) -> tuple[bool, st
         if existing:
             return False, "Cet utilisateur est deja dans tes amis."
 
-        conn.execute("INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)", (int(user_id), friend_id))
-        conn.execute("INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)", (friend_id, int(user_id)))
-    return True, "Ami ajoute."
+        conn.execute("INSERT OR IGNORE INTO friendships (user_id, friend_id) VALUES (?, ?)", (int(user_id), friend_id))
+        conn.execute("INSERT OR IGNORE INTO friendships (user_id, friend_id) VALUES (?, ?)", (friend_id, int(user_id)))
+        return True, "Ami ajoute."
+
+    return _with_write_retry(_op)
 
 
 def list_friend_progress(user_id: int) -> list[dict[str, Any]]:
@@ -552,7 +642,7 @@ def render_banquise(user: dict[str, Any]) -> None:
         st.warning("⚠️ Danger — Requin & Orque")
 
     # Bouton fusil : tue les pingouins = compteur à 0
-    if st.button("🔫 Tuer les pingouins (remise à zéro)", type="secondary", use_container_width=True):
+    if st.button("🔫 Kill the penguin", type="secondary", use_container_width=True):
         set_user_days(int(user["id"]), 0)
         st.rerun()
 
