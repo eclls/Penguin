@@ -27,84 +27,93 @@ st.set_page_config(
 def inject_css() -> None:
     st.markdown(
         """
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
-      .stApp {
-        background: linear-gradient(180deg, #bde8ff 0%, #eaf7ff 35%, #f6fafe 100%) !important;
-      }
-      .block-container {
-        max-width: 560px;
-        padding-top: 0.9rem;
-        padding-bottom: 2rem;
-        padding-left: 0.8rem;
-        padding-right: 0.8rem;
-      }
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      .stApp { background: #f6fafe !important; font-family: 'Be Vietnam Pro', sans-serif; }
+      .block-container { max-width: 480px; padding: 0 1.5rem 7rem; padding-top: 5.5rem; }
       [data-testid="stSidebar"] { display: none; }
       #MainMenu, footer, .stDeployButton { visibility: hidden; }
       .stButton > button, .stFormSubmitButton > button {
-        min-height: 46px;
-        border-radius: 14px;
-        font-weight: 700;
+        min-height: 46px; border-radius: 1rem; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif;
       }
-      .penguin-card {
-        background: rgba(255, 255, 255, 0.92);
-        border-radius: 1rem;
-        border: 1px solid rgba(0, 52, 101, 0.1);
-        padding: 1rem;
-        box-shadow: 0 8px 30px rgba(0, 52, 101, 0.08);
+      .penguin-header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+        background: rgba(255,255,255,0.8); backdrop-filter: blur(24px);
+        box-shadow: 0 24px 48px rgba(0,52,101,0.06);
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0 1.5rem; height: 4rem;
       }
+      .penguin-header-logo { display: flex; align-items: center; gap: 0.5rem; }
+      .penguin-header-logo .ms { font-size: 28px; color: #003465; }
+      .penguin-header-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; color: #003465; }
+      .penguin-header-right { display: flex; align-items: center; gap: 1rem; }
+      .penguin-jour-badge {
+        font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1rem;
+        color: #003465; background: rgba(0,52,101,0.05);
+        padding: 0.25rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(0,52,101,0.1);
+      }
+      .penguin-stats-card {
+        background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);
+        padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;
+        backdrop-filter: blur(8px); display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 0.5rem; text-align: center;
+      }
+      .penguin-stats-item { display: flex; flex-direction: column; align-items: center; }
+      .penguin-stats-item.border-l { border-left: 1px solid rgba(255,255,255,0.6); }
+      .penguin-stats-item .ms { font-size: 1.25rem; }
+      .penguin-stats-item .val { font-size: 10px; font-weight: 700; }
+      .penguin-stats-item .lbl { font-size: 8px; text-transform: uppercase; color: #424750; }
+      .penguin-iceberg-wrap {
+        width: 100%; aspect-ratio: 1; position: relative; margin-bottom: 2rem;
+      }
+      .penguin-iceberg-bg {
+        position: absolute; inset: 0; background: rgba(181,233,254,0.3);
+        border-radius: 0.75rem; overflow: hidden;
+      }
+      .penguin-iceberg-bg .water { position: absolute; bottom: 0; left: 0; right: 0; height: 33%; background: rgba(0,52,101,0.1); }
+      .penguin-iceberg-block {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-2deg);
+        width: 80%; height: 50%; background: #fff; border-radius: 0.75rem;
+        box-shadow: 0 8px 24px rgba(0,52,101,0.12); border: 1px solid rgba(255,255,255,0.4);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .penguin-animal { position: absolute; transform: translate(-50%,-50%); line-height: 1; user-select: none; }
+      .penguin-animal .ms { font-size: inherit; }
+      .penguin-animal--bird .ms { color: #326578; }
+      .penguin-animal--penguin .ms { color: #003465; }
+      .penguin-animal--orca .ms { color: #1e3a5f; }
+      .penguin-animal--shark .ms { color: #ba1a1a; }
+      .penguin-dodo { display: flex; flex-direction: column; align-items: center; opacity: 0.4; filter: grayscale(1); }
+      .penguin-dodo .ms { font-size: 64px !important; color: #003465 !important; }
+      .penguin-bento { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+      .penguin-bento-card {
+        background: #f0f4f8; padding: 1.25rem; border-radius: 0.5rem;
+        display: flex; flex-direction: column; gap: 0.5rem;
+      }
+      .penguin-bento-card .ms { color: #326578; }
+      .penguin-bento-card .title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; color: #171c1f; }
+      .penguin-bento-card .sub { font-size: 0.75rem; color: #424750; }
+      .penguin-nav {
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+        background: rgba(255,255,255,0.8); backdrop-filter: blur(24px);
+        box-shadow: 0 -12px 32px rgba(0,52,101,0.04);
+        border-radius: 2rem 2rem 0 0;
+        display: flex; justify-content: space-around; align-items: center;
+        padding: 0.75rem 1rem 1.5rem;
+      }
+      .penguin-nav-btn {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 0.5rem 1.25rem; border-radius: 9999px;
+        text-decoration: none; color: #64748b; font-size: 10px;
+        font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+      }
+      .penguin-nav-btn.active { background: #003465; color: #fff; }
+      .penguin-nav-btn .ms { font-size: 24px; margin-bottom: 2px; }
       .penguin-error-card {
-        background: rgba(255, 237, 237, 0.96);
-        border: 1px solid rgba(186, 26, 26, 0.25);
-        border-radius: 0.9rem;
-        padding: 0.8rem;
-        margin-bottom: 0.8rem;
-      }
-      .penguin-scene {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 4 / 5;
-        border-radius: 1rem;
-        overflow: hidden;
-        background: linear-gradient(180deg, #9eddff 0%, #dff5ff 45%, #79b6dc 45%, #4b8bb7 100%);
-        border: 1px solid rgba(0, 52, 101, 0.2);
-      }
-      .penguin-ice {
-        position: absolute;
-        left: 12%;
-        right: 12%;
-        bottom: 18%;
-        height: 33%;
-        background: linear-gradient(180deg, #ffffff 0%, #e9f8ff 85%);
-        border-radius: 46% 54% 43% 57% / 44% 39% 61% 56%;
-        box-shadow: inset 0 -14px 30px rgba(56, 122, 166, 0.12);
-        border: 1px solid rgba(0, 52, 101, 0.14);
-      }
-      .penguin-animal {
-        position: absolute;
-        transform: translate(-50%, -50%);
-        line-height: 1;
-        user-select: none;
-      }
-      .penguin-animal--bird {
-        font-size: clamp(14px, 2.1vw, 18px);
-        filter: saturate(1.2);
-      }
-      .penguin-animal--penguin {
-        font-size: clamp(18px, 3vw, 28px);
-      }
-      .penguin-animal--orca {
-        font-size: clamp(22px, 4vw, 34px);
-      }
-      .penguin-animal--shark {
-        font-size: clamp(26px, 4.3vw, 38px);
-      }
-      .penguin-frost {
-        position: absolute;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.6);
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        background: rgba(255,237,237,0.96); border: 1px solid rgba(186,26,26,0.25);
+        border-radius: 0.9rem; padding: 0.8rem; margin-bottom: 0.8rem;
       }
     </style>
     """,
@@ -415,22 +424,6 @@ def safe_cookie_delete(cookie_manager: Any, name: str) -> None:
         )
 
 
-def render_ios_bookmark_help() -> None:
-    """Affiche une aide simple pour ajouter l'app en bookmark iOS."""
-    with st.expander("📱 Installer sur iPhone (bookmark ecran d'accueil)"):
-        st.markdown(
-            """
-1. Ouvre l'app dans **Safari**.
-2. Appuie sur **Partager** (carré avec flèche vers le haut).
-3. Choisis **Sur l'ecran d'accueil**.
-4. Valide **Ajouter**.
-
-Ensuite l'app se lance en mode web-app plein ecran, comme une mini application.
-Si l'ancienne icone Streamlit reste visible, supprime d'abord l'ancien raccourci puis recree-le.
-"""
-        )
-
-
 def _position(seed: int, idx: int, x_min: float, x_max: float, y_min: float, y_max: float) -> tuple[float, float]:
     """Genere une position stable pour placer un animal."""
     x_span = x_max - x_min
@@ -444,14 +437,15 @@ def _position(seed: int, idx: int, x_min: float, x_max: float, y_min: float, y_m
 
 
 def _animals_html(
-    emoji: str,
+    symbol: str,
     count: int,
     css_class: str,
     seed: int,
     zone: tuple[float, float, float, float],
     max_display: int,
+    size: str = "24px",
 ) -> tuple[str, int]:
-    """Construit le HTML des animaux et retourne le nombre masque."""
+    """Construit le HTML des animaux (Material Symbols) et retourne le nombre masque."""
     x_min, x_max, y_min, y_max = zone
     shown = min(max(count, 0), max_display)
     parts: list[str] = []
@@ -459,64 +453,76 @@ def _animals_html(
         x, y = _position(seed, i, x_min, x_max, y_min, y_max)
         wobble = math.sin((seed + i) / 8.0) * 1.5
         parts.append(
-            (
-                f'<span class="penguin-animal {css_class}" '
-                f'style="left:{x:.2f}%; top:{(y + wobble):.2f}%;">{emoji}</span>'
-            )
+            f'<span class="penguin-animal {css_class}" '
+            f'style="left:{x:.2f}%; top:{(y + wobble):.2f}%; font-size:{size}">'
+            f'<span class="ms material-symbols-outlined">{symbol}</span></span>'
         )
     hidden = max(count - shown, 0)
     return "".join(parts), hidden
 
 
 def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
-    """Rendu illustre de la banquise avec les bons animaux."""
+    """Rendu illustre de la banquise avec les bons animaux (Material Symbols). J=0 => aucun animal."""
+    days = fauna["days"]
     birds_html, birds_hidden = _animals_html(
-        "🐦",
+        "flutter_dash",
         fauna["gulls"],
         "penguin-animal--bird",
         user_id + 11,
         (8, 92, 8, 39),
         max_display=90,
+        size="28px",
     )
     penguins_html, penguins_hidden = _animals_html(
-        "🐧",
+        "ice_skating",
         fauna["penguins"],
         "penguin-animal--penguin",
         user_id + 29,
         (20, 80, 53, 77),
         max_display=70,
+        size="32px",
     )
     orcas_html, orcas_hidden = _animals_html(
-        "🐋",
+        "water_ec",
         fauna["orcas"],
         "penguin-animal--orca",
         user_id + 43,
         (10, 90, 70, 92),
         max_display=18,
+        size="28px",
     )
     sharks_html, sharks_hidden = _animals_html(
-        "🦈",
+        "sailing",
         fauna["sharks"],
         "penguin-animal--shark",
         user_id + 67,
         (12, 88, 78, 96),
         max_display=14,
+        size="28px",
     )
 
-    frost = []
-    for i in range(14):
-        x, y = _position(user_id + 101, i, 4, 96, 6, 42)
-        frost.append(f'<span class="penguin-frost" style="left:{x:.2f}%; top:{y:.2f}%;"></span>')
+    # J=0 : banquise vide (Dodo...). J>0 : animaux dynamiques
+    if days == 0:
+        inner = """
+        <div class="penguin-dodo">
+          <span class="ms material-symbols-outlined">ice_skating</span>
+          <span style="font-size:12px;font-weight:700;margin-top:8px">Dodo...</span>
+        </div>
+        """
+    else:
+        inner = f"{birds_html}{penguins_html}{orcas_html}{sharks_html}"
 
     st.markdown(
         f"""
-        <div class="penguin-scene">
-          {"".join(frost)}
-          <div class="penguin-ice"></div>
-          {birds_html}
-          {penguins_html}
-          {orcas_html}
-          {sharks_html}
+        <div class="penguin-iceberg-wrap">
+          <div class="penguin-iceberg-bg"><div class="water"></div></div>
+          <div class="penguin-iceberg-block">
+            <div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+              {inner}
+            </div>
+          </div>
+          <div style="position:absolute;top:10%;left:10%;opacity:0.2"><span class="material-symbols-outlined" style="font-size:48px">water_drop</span></div>
+          <div style="position:absolute;bottom:20%;right:4%;opacity:0.1"><span class="material-symbols-outlined" style="font-size:56px">sailing</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -524,15 +530,15 @@ def render_banquise_scene(user_id: int, fauna: dict[str, int]) -> None:
 
     chips = []
     if birds_hidden:
-        chips.append(f"🐦 +{birds_hidden}")
+        chips.append(f"Mouettes +{birds_hidden}")
     if penguins_hidden:
-        chips.append(f"🐧 +{penguins_hidden}")
+        chips.append(f"Pingouins +{penguins_hidden}")
     if orcas_hidden:
-        chips.append(f"🐋 +{orcas_hidden}")
+        chips.append(f"Orques +{orcas_hidden}")
     if sharks_hidden:
-        chips.append(f"🦈 +{sharks_hidden}")
+        chips.append(f"Requins +{sharks_hidden}")
     if chips:
-        st.caption("Animaux supplementaires hors ecran pour garder une vue lisible : " + " • ".join(chips))
+        st.caption("Animaux supplementaires hors ecran : " + " • ".join(chips))
 
 
 def init_session() -> None:
@@ -628,14 +634,24 @@ def auth_screen(cookie_manager: Any) -> None:
 
 
 def opening_modal(user_id: int) -> None:
-    @st.dialog("Tu as tue le pinguin ? Secoue toi")
+    @st.dialog("Tu as tué le pinguin ?")
     def _dialog() -> None:
-        st.write("Action A: reset apres secousse. Action B: annuler.")
-        st.info("Sur smartphone, secoue puis confirme avec le bouton reset.")
-        if st.button("📳 J'ai secoue: reset", type="primary", use_container_width=True):
+        st.markdown(
+            """
+            <div style="text-align:center;padding:1rem 0">
+              <div style="width:96px;height:96px;margin:0 auto 1.5rem;background:linear-gradient(135deg,#003465 0%,#004b8d 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 24px 48px rgba(0,52,101,0.2)">
+                <span class="material-symbols-outlined" style="font-size:48px;color:white">ice_skating</span>
+              </div>
+              <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:1.5rem;color:#003465;margin-bottom:0.75rem">Tu as tué le pinguin ?</h2>
+              <p style="color:#424750;margin-bottom:2rem;line-height:1.5">Secoue toi pour le ramener sur sa banquise !</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Réinitialiser (Secouer)", type="primary", use_container_width=True):
             set_user_days(user_id, 0)
             st.session_state["show_reset_modal"] = False
-            st.success("Compteur remis a zero.")
+            st.success("Compteur remis à zéro.")
             st.rerun()
         if st.button("Annuler", use_container_width=True):
             st.session_state["show_reset_modal"] = False
@@ -644,53 +660,89 @@ def opening_modal(user_id: int) -> None:
     _dialog()
 
 
-def render_banquise(user: dict[str, Any]) -> None:
+def render_header(user: dict[str, Any]) -> None:
+    """Barre fixe en haut : logo Penguin, Jour X, avatar."""
     days = int(user["days"])
-    fauna = breakdown_days(days)
-    st.markdown(f"## Jour {days}")
-    st.caption(f"Salut {user['username']} 👋")
-
-    c1, c2 = st.columns(2)
-    c1.metric("Mouettes", fauna["gulls"])
-    c2.metric("Pingouins", fauna["penguins"])
-    c3, c4 = st.columns(2)
-    c3.metric("Orques", fauna["orcas"])
-    c4.metric("Requins", fauna["sharks"])
-
     st.markdown(
         f"""
-        <div class="penguin-card">
-          <div><strong>🦈 Requins:</strong> {emoji_cloud("🦈", fauna["sharks"])}</div>
-          <div><strong>🐋 Orques:</strong> {emoji_cloud("🐋", fauna["orcas"])}</div>
-          <div><strong>🐧 Pingouins:</strong> {emoji_cloud("🐧", fauna["penguins"])}</div>
-          <div><strong>🐦 Mouettes:</strong> {emoji_cloud("🐦", fauna["gulls"])}</div>
+        <div class="penguin-header">
+          <div class="penguin-header-logo">
+            <span class="ms material-symbols-outlined">ice_skating</span>
+            <span class="penguin-header-title">Penguin</span>
+          </div>
+          <div class="penguin-header-right">
+            <span class="penguin-jour-badge">Jour {days}</span>
+            <div style="width:40px;height:40px;border-radius:50%;background:#dfe3e7;display:flex;align-items:center;justify-content:center">
+              <span class="material-symbols-outlined" style="color:#003465;font-size:24px">person</span>
+            </div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.caption("Exemple valide: Jour 256 = 1 orque + 2 pingouins + 16 mouettes.")
 
 
-def render_vue(user: dict[str, Any]) -> None:
+def render_stats_card(fauna: dict[str, int]) -> None:
+    """Carte stats : Mouettes, Pingouins, Orques, Requins."""
+    st.markdown(
+        f"""
+        <div class="penguin-stats-card">
+          <div class="penguin-stats-item">
+            <span class="ms material-symbols-outlined" style="color:#326578">flutter_dash</span>
+            <span class="val">{fauna["gulls"]}</span>
+            <span class="lbl">Mouettes</span>
+          </div>
+          <div class="penguin-stats-item border-l">
+            <span class="ms material-symbols-outlined" style="color:#003465">ice_skating</span>
+            <span class="val">{fauna["penguins"]}</span>
+            <span class="lbl">Penguin</span>
+          </div>
+          <div class="penguin-stats-item border-l">
+            <span class="ms material-symbols-outlined" style="color:#1e3a5f">water_ec</span>
+            <span class="val">{fauna["orcas"]}</span>
+            <span class="lbl">Orque</span>
+          </div>
+          <div class="penguin-stats-item border-l">
+            <span class="ms material-symbols-outlined" style="color:#ba1a1a">sailing</span>
+            <span class="val">{fauna["sharks"]}</span>
+            <span class="lbl">Requin</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_bento_grid() -> None:
+    """Grille bento : Océan, Danger."""
+    st.markdown(
+        """
+        <div class="penguin-bento">
+          <div class="penguin-bento-card">
+            <span class="material-symbols-outlined">waves</span>
+            <span class="title">Océan</span>
+            <span class="sub">-2°C Arctique</span>
+          </div>
+          <div class="penguin-bento-card">
+            <span class="material-symbols-outlined" style="color:#4f2b00">warning</span>
+            <span class="title">Danger</span>
+            <span class="sub">Requin & Orque</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_banquise(user: dict[str, Any]) -> None:
+    """Vue Banquise unifiee : header, stats, iceberg, bento."""
     days = int(user["days"])
     fauna = breakdown_days(days)
-    st.markdown(f"## 🧊 Vue illustree - Jour {days}")
-    st.caption("La scene ci-dessous affiche la banquise avec les bons animaux selon ton compteur.")
+
+    render_header(user)
+    render_stats_card(fauna)
     render_banquise_scene(int(user["id"]), fauna)
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Mouettes", fauna["gulls"])
-        st.metric("Orques", fauna["orcas"])
-    with c2:
-        st.metric("Pingouins", fauna["penguins"])
-        st.metric("Requins", fauna["sharks"])
-
-    ex = breakdown_days(256)
-    st.code(
-        f"Jour 256 -> {ex['orcas']} orque(s), {ex['penguins']} pingouin(s), {ex['gulls']} mouette(s)",
-        language="text",
-    )
+    render_bento_grid()
 
 
 def render_amis(user: dict[str, Any]) -> None:
@@ -786,7 +838,6 @@ def run_app() -> None:
 
         if st.session_state["user_id"] is None:
             auth_screen(cookie_manager)
-            render_ios_bookmark_help()
             st.stop()
 
         current_user = get_user_by_id(int(st.session_state["user_id"]))
@@ -798,23 +849,31 @@ def run_app() -> None:
         if st.session_state.get("show_reset_modal", False):
             opening_modal(int(current_user["id"]))
 
-        tab = st.radio(
-            "Navigation",
-            options=["Banquise", "Vue illustree", "Amis", "Profil"],
-            horizontal=True,
-            label_visibility="collapsed",
-        )
+        tab = st.session_state.get("tab", "Banquise")
+
+        render_header(current_user)
 
         if tab == "Banquise":
             render_banquise(current_user)
-        elif tab == "Vue illustree":
-            render_vue(current_user)
         elif tab == "Amis":
             render_amis(current_user)
         else:
             render_profil(current_user, cookie_manager)
 
-        render_ios_bookmark_help()
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+        nav_cols = st.columns(3)
+        with nav_cols[0]:
+            if st.button("🏠 Banquise", type="primary" if tab == "Banquise" else "secondary", use_container_width=True, key="nav_banquise"):
+                st.session_state["tab"] = "Banquise"
+                st.rerun()
+        with nav_cols[1]:
+            if st.button("👥 Amis", type="primary" if tab == "Amis" else "secondary", use_container_width=True, key="nav_amis"):
+                st.session_state["tab"] = "Amis"
+                st.rerun()
+        with nav_cols[2]:
+            if st.button("👤 Profil", type="primary" if tab == "Profil" else "secondary", use_container_width=True, key="nav_profil"):
+                st.session_state["tab"] = "Profil"
+                st.rerun()
     except Exception:
         details = traceback.format_exc()
         set_persistent_error(
